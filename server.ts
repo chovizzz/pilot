@@ -53,7 +53,35 @@ export default {
 
       return response;
     } catch (error) {
-      console.error(error);
+      console.error("Server error:", error);
+      
+      // In preview/production, provide more detailed error info
+      const isProduction = process.env.NODE_ENV === "production";
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      
+      // Log full error details for debugging
+      console.error("Error details:", {
+        message: errorMessage,
+        stack: errorStack,
+        name: error instanceof Error ? error.name : "Unknown",
+      });
+      
+      // Return detailed error in development/preview, generic in production
+      if (!isProduction) {
+        return new Response(
+          JSON.stringify({
+            error: "An unexpected error occurred",
+            message: errorMessage,
+            stack: errorStack,
+          }, null, 2),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      
       return new Response("An unexpected error occurred", { status: 500 });
     }
   },
