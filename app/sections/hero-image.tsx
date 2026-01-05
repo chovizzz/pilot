@@ -116,7 +116,7 @@ export const schema = createSchema({
     },
     { group: "Overlay", inputs: overlayInputs },
   ],
-  childTypes: ["subheading", "heading", "paragraph", "button"],
+  childTypes: ["subheading", "heading", "paragraph", "button", "promotion-badge"],
   presets: {
     height: "large",
     contentPosition: "center center",

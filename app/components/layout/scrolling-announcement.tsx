@@ -6,6 +6,7 @@ const MAX_DURATION = 20;
 export function ScrollingAnnouncement() {
   const themeSettings = useThemeSettings();
   const {
+    showScrollingAnnouncement = true,
     topbarText,
     topbarHeight,
     topbarTextColor,
@@ -13,6 +14,10 @@ export function ScrollingAnnouncement() {
     topbarScrollingGap,
     topbarScrollingSpeed,
   } = themeSettings;
+
+  if (!showScrollingAnnouncement) {
+    return null;
+  }
 
   function updateStyles() {
     if (topbarText) {

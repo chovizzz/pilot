@@ -39,6 +39,19 @@ export const links: LinksFunction = () => {
   return [
     {
       rel: "preconnect",
+      href: "https://fonts.googleapis.com",
+    },
+    {
+      rel: "preconnect",
+      href: "https://fonts.gstatic.com",
+      crossOrigin: "anonymous",
+    },
+    {
+      rel: "stylesheet",
+      href: "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap",
+    },
+    {
+      rel: "preconnect",
       href: "https://cdn.shopify.com",
     },
     {
@@ -98,7 +111,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const nonce = useNonce();
   const data = useRouteLoaderData<RootLoader>("root");
   const locale = data?.selectedLocale ?? DEFAULT_LOCALE;
-  const { topbarHeight, topbarText } = useThemeSettings();
+  const {
+    topbarHeight,
+    topbarText,
+    showScrollingAnnouncement = true,
+    showHeader = true,
+    showFooter = true,
+  } = useThemeSettings();
   const shouldShowNewsletterPopup = useShouldRenderNewsletterPopup();
   if (
     location.pathname === "/subrequest-profiler" ||
@@ -141,12 +160,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     Skip to content
                   </a>
                 </div>
-                <ScrollingAnnouncement />
-                <Header />
+                {showScrollingAnnouncement && <ScrollingAnnouncement />}
+                {showHeader && <Header />}
                 <main id="mainContent" className="grow">
                   {children}
                 </main>
-                <Footer />
+                {showFooter && <Footer />}
               </div>
               {shouldShowNewsletterPopup && <NewsletterPopup />}
             </TooltipProvider>

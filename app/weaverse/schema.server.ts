@@ -90,6 +90,12 @@ export const themeSchema: HydrogenThemeSchema = {
       group: "Scrolling announcements",
       inputs: [
         {
+          type: "switch",
+          name: "showScrollingAnnouncement",
+          label: "Show Scrolling Announcement",
+          defaultValue: true,
+        },
+        {
           type: "richtext",
           name: "topbarText",
           label: "Content",
@@ -136,6 +142,12 @@ export const themeSchema: HydrogenThemeSchema = {
     {
       group: "Header",
       inputs: [
+        {
+          type: "switch",
+          name: "showHeader",
+          label: "Show Header",
+          defaultValue: true,
+        },
         {
           type: "select",
           name: "headerWidth",
@@ -987,6 +999,12 @@ export const themeSchema: HydrogenThemeSchema = {
     {
       group: "Footer",
       inputs: [
+        {
+          type: "switch",
+          name: "showFooter",
+          label: "Show Footer",
+          defaultValue: true,
+        },
         {
           type: "select",
           name: "footerWidth",

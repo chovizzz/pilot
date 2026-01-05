@@ -64,6 +64,29 @@ import * as TestimonialItem from "~/sections/testimonials/item";
 import * as TestimonialItems from "~/sections/testimonials/items";
 import * as VideoEmbed from "~/sections/video-embed";
 import * as VideoEmbedItem from "~/sections/video-embed/video";
+import * as StockAlert from "~/sections/stock-alert";
+import * as PromotionBanner from "~/sections/promotion-banner";
+import * as PromotionBannerItem from "~/sections/promotion-banner/item";
+import * as FAQ from "~/sections/faq";
+import * as FAQItems from "~/sections/faq/items";
+import * as FAQItem from "~/sections/faq/item";
+import * as FeatureIcons from "~/sections/feature-icons";
+import * as FeatureIconsGrid from "~/sections/feature-icons/grid";
+import * as FeatureIconsItem from "~/sections/feature-icons/item";
+import * as FeatureComparison from "~/sections/feature-comparison";
+import * as FeatureComparisonTable from "~/sections/feature-comparison/table";
+import * as FeatureComparisonTableItem from "~/sections/feature-comparison/table-item";
+import * as ProductSpecifications from "~/sections/product-specifications";
+import * as ProductSpecificationsList from "~/sections/product-specifications/list";
+import * as ProductSpecificationsItem from "~/sections/product-specifications/item";
+import * as PainPointSolution from "~/sections/pain-point-solution";
+import * as PainPointSolutionItems from "~/sections/pain-point-solution/items";
+import * as PainPointSolutionItem from "~/sections/pain-point-solution/item";
+import * as PromotionBadge from "~/sections/promotion-badge";
+import * as FeatureTags from "~/sections/feature-tags";
+import * as FeatureTagItem from "~/sections/feature-tags/item";
+import * as ComparisonImages from "~/sections/comparison-images";
+import * as ComparisonImagesItem from "~/sections/comparison-images/item";
 
 export const components: HydrogenComponent[] = [
   SubHeading,
@@ -136,4 +159,27 @@ export const components: HydrogenComponent[] = [
   SlideShow,
   SlideShowSlide,
   Spacer,
+  StockAlert,
+  PromotionBanner,
+  PromotionBannerItem,
+  FAQ,
+  FAQItems,
+  FAQItem,
+  FeatureIcons,
+  FeatureIconsGrid,
+  FeatureIconsItem,
+  FeatureComparison,
+  FeatureComparisonTable,
+  FeatureComparisonTableItem,
+  ProductSpecifications,
+  ProductSpecificationsList,
+  ProductSpecificationsItem,
+  PainPointSolution,
+  PainPointSolutionItems,
+  PainPointSolutionItem,
+  PromotionBadge,
+  FeatureTags,
+  FeatureTagItem,
+  ComparisonImages,
+  ComparisonImagesItem,
 ];
