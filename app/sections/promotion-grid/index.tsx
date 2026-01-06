@@ -97,7 +97,7 @@ export const schema = createSchema({
     { group: "Background", inputs: backgroundInputs },
     { group: "Overlay", inputs: overlayInputs },
   ],
-  childTypes: ["promotion-grid-item"],
+  childTypes: ["promotion-grid-item", "promotion-button"],
   presets: {
     gridSize: "2x2",
     gap: 20,

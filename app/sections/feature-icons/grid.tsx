@@ -16,14 +16,14 @@ export const FeatureIconsGrid = forwardRef<
   HTMLDivElement,
   HydrogenComponentProps<FeatureIconsGridData>
 >((props, ref) => {
-  const { columns = 2, gap = 16 } = props;
+  const { columns = 2, gap = 16, ...rest } = props as FeatureIconsGridData & typeof props;
   const childInstances = useChildInstances();
   const animation = useAnimation();
 
   return (
     <div
       ref={ref}
-      {...props}
+      {...rest}
       className={`grid gap-${gap / 4}`}
       style={{
         gridTemplateColumns: `repeat(${columns}, 1fr)`,
@@ -32,8 +32,8 @@ export const FeatureIconsGrid = forwardRef<
       data-motion="fade-up"
       {...animation}
     >
-      {childInstances.map((child) => (
-        <FeatureIconsItem key={child.id} {...(child.data as any)} />
+      {childInstances.map((child, index) => (
+        <FeatureIconsItem key={`item-${index}`} {...(child.data as any)} />
       ))}
     </div>
   );

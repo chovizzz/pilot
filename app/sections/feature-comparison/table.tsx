@@ -48,6 +48,7 @@ export const FeatureComparisonTable = forwardRef<
     borderColor = "#d1d5db",
     rowBgColor = "#ffffff",
     rowHeight = 48,
+    ...rest
   } = props as FeatureComparisonTableData & typeof props;
   const childInstances = useChildInstances();
   const animation = useAnimation();
@@ -59,7 +60,7 @@ export const FeatureComparisonTable = forwardRef<
   return (
     <div
       ref={ref}
-      {...props}
+      {...rest}
       className="overflow-x-auto"
       data-motion="fade-up"
       {...animation}
@@ -116,7 +117,7 @@ export const FeatureComparisonTable = forwardRef<
         <tbody>
           {childInstances.map((child, index) => (
             <FeatureComparisonTableItem
-              key={index}
+              key={`table-item-${index}`}
               showBorder={showBorder}
               borderColor={borderColor}
               rowBgColor={rowBgColor}

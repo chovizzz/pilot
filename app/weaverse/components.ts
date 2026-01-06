@@ -53,6 +53,7 @@ import * as Page from "~/sections/page";
 import * as PromotionGrid from "~/sections/promotion-grid";
 import * as PromotionGridButtons from "~/sections/promotion-grid/buttons";
 import * as PromotionGridItem from "~/sections/promotion-grid/item";
+import * as PromotionButton from "~/sections/promotion-grid/promotion-button";
 import * as RelatedArticles from "~/sections/related-articles";
 import * as RelatedProducts from "~/sections/related-products";
 import * as SingleProduct from "~/sections/single-product";
@@ -87,6 +88,8 @@ import * as FeatureTags from "~/sections/feature-tags";
 import * as FeatureTagItem from "~/sections/feature-tags/item";
 import * as ComparisonImages from "~/sections/comparison-images";
 import * as ComparisonImagesItem from "~/sections/comparison-images/item";
+import * as BackToTop from "~/sections/back-to-top";
+import * as Copyright from "~/sections/copyright";
 
 export const components: HydrogenComponent[] = [
   SubHeading,
@@ -182,4 +185,7 @@ export const components: HydrogenComponent[] = [
   FeatureTagItem,
   ComparisonImages,
   ComparisonImagesItem,
+  PromotionButton,
+  BackToTop,
+  Copyright,
 ];

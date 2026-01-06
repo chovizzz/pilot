@@ -8,11 +8,14 @@ interface StockAlertData {
   rightText?: string;
   leftIcon?: WeaverseImage | string;
   leftBgColor?: string;
-  rightBgColor?: string;
+  rightGradientStart?: string;
+  rightGradientEnd?: string;
   leftTextColor?: string;
   rightTextColor?: string;
   leftTextSize?: number;
   rightTextSize?: number;
+  scrollSpeed?: number;
+  iconRotateSpeed?: number;
   sticky?: boolean;
 }
 
@@ -21,15 +24,18 @@ type StockAlertProps = HydrogenComponentProps<StockAlertData>;
 export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
   (props, ref) => {
     const {
-      leftText = "Only 37 left",
+      leftText = "Only 100 left",
       rightText = "Hurry before the price goes back up!",
       leftIcon,
-      leftBgColor = "#ff0000",
-      rightBgColor = "#000000",
+      leftBgColor = "#000000",
+      rightGradientStart = "#ef7b2e",
+      rightGradientEnd = "#fae2d2",
       leftTextColor = "#ffffff",
       rightTextColor = "#ffffff",
-      leftTextSize = 18,
-      rightTextSize = 18,
+      leftTextSize = 14,
+      rightTextSize = 14,
+      scrollSpeed = 20,
+      iconRotateSpeed = 3,
       sticky = false,
       ...rest
     } = props as StockAlertData & typeof props;
@@ -41,47 +47,94 @@ export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
       ? (typeof leftIcon === "string" ? leftIcon : leftIcon.url)
       : null;
 
+    // Create marquee animation for scrolling text
+    // Each text segment is 100% width, so we need to scroll 100% to fully move past the first segment
+    const marqueeKeyframes = `@keyframes stock-alert-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+    @keyframes stock-alert-icon-rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .stock-alert-left-section {
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+      z-index: 1;
+    }
+    .stock-alert-left-section::after {
+      content: '';
+      position: absolute;
+      right: -12px;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      height: 0;
+      border-top: calc(100% / 2) solid transparent;
+      border-bottom: calc(100% / 2) solid transparent;
+      border-left: 12px solid ${leftBgColor};
+      z-index: 2;
+    }`;
+
     return (
       <Section ref={ref} {...rest}>
         <div
-          className={`flex items-center justify-between gap-4 px-4 py-3 ${
+          className={`flex items-center leading-none ${
             sticky ? "sticky top-0 z-50" : ""
           }`}
-          style={{
-            backgroundColor: leftBgColor,
-            background: `linear-gradient(to right, ${leftBgColor} 0%, ${rightBgColor} 100%)`,
-          }}
           data-motion="fade-up"
           {...animation}
         >
-          <div className="flex items-center gap-2">
-            {leftIconUrl && (
-              <img
-                src={leftIconUrl}
-                alt=""
-                className="w-6 h-6 object-contain"
-                style={{ width: 24, height: 24 }}
-              />
-            )}
-            <span
-              style={{
-                color: leftTextColor,
-                fontSize: `${leftTextSize}px`,
-                fontWeight: 600,
-              }}
-            >
-              {leftText}
-            </span>
-          </div>
-          <span
+          <style>{marqueeKeyframes}</style>
+          {/* Left section - Black background with triangle */}
+          <div
+            className="py-2 px-3 font-bold flex items-center gap-2 shrink-0 relative stock-alert-left-section"
             style={{
-              color: rightTextColor,
-              fontSize: `${rightTextSize}px`,
-              fontWeight: 500,
+              backgroundColor: leftBgColor,
+              color: leftTextColor,
+              fontSize: `${leftTextSize}px`,
             }}
           >
-            {rightText}
-          </span>
+            {leftIconUrl && (
+              <div className="shrink-0">
+                <img
+                  src={leftIconUrl}
+                  alt=""
+                  className="object-contain"
+                  style={{
+                    width: "12px",
+                    height: "auto",
+                    animation: `stock-alert-icon-rotate ${iconRotateSpeed}s linear infinite`,
+                  }}
+                />
+              </div>
+            )}
+            <div>{leftText}</div>
+          </div>
+          {/* Right section - Orange gradient with scrolling text */}
+          <div
+            className="py-2 px-3 flex-1 flex items-center overflow-hidden relative"
+            style={{
+              backgroundImage: `linear-gradient(to right, ${rightGradientStart}, ${rightGradientEnd})`,
+              color: rightTextColor,
+              fontSize: `${rightTextSize}px`,
+              marginLeft: "-12px",
+              paddingLeft: "24px",
+            }}
+          >
+            <div
+              className="flex whitespace-nowrap"
+              style={{
+                animation: `stock-alert-scroll ${scrollSpeed}s linear infinite`,
+              }}
+            >
+              <div className="w-full shrink-0 flex items-center justify-center">
+                {rightText}
+              </div>
+              <div className="w-full shrink-0 flex items-center justify-center">
+                {rightText}
+              </div>
+            </div>
+          </div>
         </div>
       </Section>
     );
@@ -130,9 +183,15 @@ export const schema = createSchema({
         },
         {
           type: "color",
-          name: "rightBgColor",
-          label: "Right Background Color",
-          defaultValue: "#000000",
+          name: "rightGradientStart",
+          label: "Right Gradient Start Color",
+          defaultValue: "#ef7b2e",
+        },
+        {
+          type: "color",
+          name: "rightGradientEnd",
+          label: "Right Gradient End Color",
+          defaultValue: "#fae2d2",
         },
         {
           type: "color",
@@ -155,10 +214,10 @@ export const schema = createSchema({
           type: "range",
           name: "leftTextSize",
           label: "Left Text Size",
-          defaultValue: 18,
+          defaultValue: 14,
           configs: {
-            min: 12,
-            max: 32,
+            min: 10,
+            max: 24,
             step: 1,
             unit: "px",
           },
@@ -167,10 +226,10 @@ export const schema = createSchema({
           type: "range",
           name: "rightTextSize",
           label: "Right Text Size",
-          defaultValue: 18,
+          defaultValue: 14,
           configs: {
-            min: 12,
-            max: 32,
+            min: 10,
+            max: 24,
             step: 1,
             unit: "px",
           },
@@ -186,16 +245,47 @@ export const schema = createSchema({
           label: "Sticky",
           defaultValue: false,
         },
+        {
+          type: "range",
+          name: "scrollSpeed",
+          label: "Scroll Speed",
+          defaultValue: 20,
+          configs: {
+            min: 5,
+            max: 60,
+            step: 1,
+            unit: "s",
+          },
+          helpText: "Animation duration for scrolling text (lower = faster)",
+        },
+        {
+          type: "range",
+          name: "iconRotateSpeed",
+          label: "Icon Rotate Speed",
+          defaultValue: 3,
+          configs: {
+            min: 1,
+            max: 10,
+            step: 0.5,
+            unit: "s",
+          },
+          helpText: "Animation duration for icon rotation (lower = faster)",
+        },
       ],
     },
   ],
   presets: {
-    leftText: "Only 37 left",
+    leftText: "Only 100 left",
     rightText: "Hurry before the price goes back up!",
-    leftBgColor: "#ff0000",
-    rightBgColor: "#000000",
+    leftBgColor: "#000000",
+    rightGradientStart: "#ef7b2e",
+    rightGradientEnd: "#fae2d2",
     leftTextColor: "#ffffff",
     rightTextColor: "#ffffff",
+    leftTextSize: 14,
+    rightTextSize: 14,
+    scrollSpeed: 20,
+    iconRotateSpeed: 3,
   },
 });
 

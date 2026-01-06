@@ -16,21 +16,21 @@ export const PainPointSolutionItems = forwardRef<
   HTMLDivElement,
   HydrogenComponentProps<PainPointSolutionItemsData>
 >((props, ref) => {
-  const { layout = "vertical", gap = 24 } = props;
+  const { layout = "vertical", gap = 24, ...rest } = props as PainPointSolutionItemsData & typeof props;
   const childInstances = useChildInstances();
   const animation = useAnimation();
 
   return (
     <div
       ref={ref}
-      {...props}
+      {...rest}
       className={`flex flex-${layout === "horizontal" ? "row" : "col"} gap-${gap / 4}`}
       style={{ gap: `${gap}px` }}
       data-motion="fade-up"
       {...animation}
     >
-      {childInstances.map((child) => (
-        <PainPointSolutionItem key={child.id} {...(child.data as any)} />
+      {childInstances.map((child, index) => (
+        <PainPointSolutionItem key={`pain-point-${index}`} {...(child.data as any)} />
       ))}
     </div>
   );

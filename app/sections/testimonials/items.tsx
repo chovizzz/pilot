@@ -3,17 +3,18 @@ import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import { clsx } from "clsx";
 
-const variants = cva("grid lg:grid-cols-3", {
+const variants = cva("grid gap-[30px] comment13-grid", {
   variants: {
     gap: {
       16: "gap-4",
       24: "gap-6",
+      30: "gap-[30px]",
       32: "gap-8",
       40: "gap-10",
     },
   },
   defaultVariants: {
-    gap: 32,
+    gap: 30,
   },
 });
 
@@ -24,13 +25,18 @@ interface TestimonialsItemsProps
 }
 
 function TestimonialsItems(props: TestimonialsItemsProps) {
-  const { gap, children, ref, ...rest } = props;
+  const { gap = 30, children, ref, ...rest } = props;
 
   return (
-    <div ref={ref} {...rest} className={clsx(variants({ gap }))}>
-      <div className="space-y-6">{children?.filter((_, i) => i % 3 === 0)}</div>
-      <div className="space-y-6">{children?.filter((_, i) => i % 3 === 1)}</div>
-      <div className="space-y-6">{children?.filter((_, i) => i % 3 === 2)}</div>
+    <div
+      ref={ref}
+      {...rest}
+      className={clsx(variants({ gap }))}
+      style={{
+        gridTemplateColumns: "repeat(1, minmax(0px, 1fr))",
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -52,10 +58,10 @@ export const schema = createSchema({
           configs: {
             min: 16,
             max: 40,
-            step: 8,
+            step: 2,
             unit: "px",
           },
-          defaultValue: 32,
+          defaultValue: 30,
         },
       ],
     },

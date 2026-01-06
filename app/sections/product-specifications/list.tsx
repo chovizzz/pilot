@@ -7,25 +7,31 @@ import { forwardRef } from "react";
 import { useAnimation } from "~/hooks/use-animation";
 import { ProductSpecificationsItem } from "./item";
 
+interface ProductSpecificationsListData {
+  dotSize?: number;
+}
+
 export const ProductSpecificationsList = forwardRef<
   HTMLDivElement,
-  HydrogenComponentProps
+  HydrogenComponentProps<ProductSpecificationsListData>
 >((props, ref) => {
+  const { dotSize = 5, ...rest } = props as ProductSpecificationsListData & typeof props;
   const childInstances = useChildInstances();
   const animation = useAnimation();
 
   return (
     <div
       ref={ref}
-      {...props}
-      className="space-y-2"
+      {...rest}
+      className="product-info-12-list space-y-5"
       data-motion="fade-up"
       {...animation}
     >
-      {childInstances.map((child) => (
+      {childInstances.map((child, index) => (
         <ProductSpecificationsItem
-          key={child.id}
+          key={`spec-item-${index}`}
           {...(child.data as any)}
+          dotSize={dotSize}
         />
       ))}
     </div>
@@ -40,18 +46,47 @@ export const schema = createSchema({
   type: "product-specifications--list",
   title: "Specifications List",
   childTypes: ["product-specifications--item"],
-  settings: [],
+  settings: [
+    {
+      group: "Dot",
+      inputs: [
+        {
+          type: "range",
+          name: "dotSize",
+          label: "Dot Size",
+          defaultValue: 5,
+          configs: {
+            min: 3,
+            max: 20,
+            step: 1,
+            unit: "px",
+          },
+        },
+      ],
+    },
+  ],
   presets: {
+    dotSize: 5,
     children: [
       {
         type: "product-specifications--item",
-        label: "Power",
-        value: "60W",
+        label: "Input Voltage:",
+        value: "85-265v (V)",
       },
       {
         type: "product-specifications--item",
-        label: "Voltage",
-        value: "110-240V",
+        label: "Luminous flux:",
+        value: "90 (lm)",
+      },
+      {
+        type: "product-specifications--item",
+        label: "Beam angle:",
+        value: "270 (degrees)",
+      },
+      {
+        type: "product-specifications--item",
+        label: "Main Application Scene:",
+        value: "Home",
       },
     ],
   },

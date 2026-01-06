@@ -1,39 +1,171 @@
-import { createSchema } from "@weaverse/hydrogen";
-import type { SectionProps } from "~/components/section";
+import { createSchema, type HydrogenComponentProps } from "@weaverse/hydrogen";
+import { forwardRef } from "react";
 import { Section, sectionSettings } from "~/components/section";
+import { useAnimation } from "~/hooks/use-animation";
 
-interface TestimonialsProps extends SectionProps {
-  ref?: React.Ref<HTMLElement>;
+interface TestimonialsData {
+  heading?: string;
+  description?: string;
+  maxWidth?: number;
+  padding?: number;
+  bgColor?: string;
+  headingColor?: string;
+  descriptionColor?: string;
 }
 
-function Testimonials(props: TestimonialsProps) {
-  const { children, ref, ...rest } = props;
+type TestimonialsProps = HydrogenComponentProps<TestimonialsData>;
 
-  return (
-    <Section ref={ref} {...rest}>
-      {children}
-    </Section>
-  );
-}
+export const Testimonials = forwardRef<HTMLElement, TestimonialsProps>(
+  (props, ref) => {
+    const {
+      heading = "Here's Why People Trust the Ceiling Fan with LED Light",
+      description = "It's become a must-have for people, with thousands of 5 Star Reviews!",
+      maxWidth = 500,
+      padding = 36,
+      bgColor = "#ffffff",
+      headingColor = "#000000",
+      descriptionColor = "#421700",
+      children,
+      ...rest
+    } = props as TestimonialsData & typeof props;
+
+    const animation = useAnimation();
+
+    return (
+      <Section
+        ref={ref}
+        {...rest}
+        style={{ backgroundColor: bgColor }}
+        data-motion="fade-up"
+        {...animation}
+      >
+        <div className="w-full mx-auto leading-tight comment13-container" style={{ backgroundColor: bgColor }}>
+          <div
+            className="main-content mx-auto"
+            style={{
+              padding: `${padding}px`,
+              maxWidth: `${maxWidth}px`,
+            }}
+          >
+            {heading && (
+              <div
+                className="comment13-title mb-4 text-center font-bold"
+                style={{
+                  color: headingColor,
+                  fontSize: "24px",
+                }}
+              >
+                <p>{heading}</p>
+              </div>
+            )}
+            {description && (
+              <div
+                className="comment13-desc mb-8 text-center"
+                style={{
+                  color: descriptionColor,
+                  fontSize: "14px",
+                }}
+              >
+                <p>{description}</p>
+              </div>
+            )}
+            {children}
+          </div>
+        </div>
+      </Section>
+    );
+  }
+);
+
+Testimonials.displayName = "Testimonials";
 
 export default Testimonials;
 
 export const schema = createSchema({
   type: "testimonials",
   title: "Testimonials",
-  childTypes: ["subheading", "heading", "paragraph", "testimonials-items"],
-  settings: sectionSettings,
+  childTypes: ["testimonials-items"],
+  settings: [
+    {
+      group: "Content",
+      inputs: [
+        {
+          type: "text",
+          name: "heading",
+          label: "Heading",
+          defaultValue: "Here's Why People Trust the Ceiling Fan with LED Light",
+        },
+        {
+          type: "text",
+          name: "description",
+          label: "Description",
+          defaultValue: "It's become a must-have for people, with thousands of 5 Star Reviews!",
+        },
+      ],
+    },
+    {
+      group: "Layout",
+      inputs: [
+        {
+          type: "range",
+          name: "maxWidth",
+          label: "Max Width",
+          defaultValue: 500,
+          configs: {
+            min: 300,
+            max: 800,
+            step: 10,
+            unit: "px",
+          },
+        },
+        {
+          type: "range",
+          name: "padding",
+          label: "Padding",
+          defaultValue: 36,
+          configs: {
+            min: 0,
+            max: 80,
+            step: 4,
+            unit: "px",
+          },
+        },
+      ],
+    },
+    {
+      group: "Colors",
+      inputs: [
+        {
+          type: "color",
+          name: "bgColor",
+          label: "Background Color",
+          defaultValue: "#ffffff",
+        },
+        {
+          type: "color",
+          name: "headingColor",
+          label: "Heading Color",
+          defaultValue: "#000000",
+        },
+        {
+          type: "color",
+          name: "descriptionColor",
+          label: "Description Color",
+          defaultValue: "#421700",
+        },
+      ],
+    },
+    ...sectionSettings,
+  ],
   presets: {
+    heading: "Here's Why People Trust the Ceiling Fan with LED Light",
+    description: "It's become a must-have for people, with thousands of 5 Star Reviews!",
+    maxWidth: 500,
+    padding: 36,
+    bgColor: "#ffffff",
+    headingColor: "#000000",
+    descriptionColor: "#421700",
     children: [
-      {
-        type: "heading",
-        content: "Testimonials",
-      },
-      {
-        type: "paragraph",
-        content:
-          "We are a team of passionate people whose goal is to improve everyone's life through disruptive products. We build great products to solve your business problems.",
-      },
       {
         type: "testimonials-items",
         children: [

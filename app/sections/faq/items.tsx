@@ -9,19 +9,20 @@ import { FAQItem } from "./item";
 
 export const FAQItems = forwardRef<HTMLDivElement, HydrogenComponentProps>(
   (props, ref) => {
+    const { ...rest } = props;
     const childInstances = useChildInstances();
     const animation = useAnimation();
 
     return (
       <div
         ref={ref}
-        {...props}
-        className="space-y-4"
+        {...rest}
+        className="w-full faq6-list"
         data-motion="fade-up"
         {...animation}
       >
-        {childInstances.map((child) => (
-          <FAQItem key={child.id} {...(child.data as any)} />
+        {childInstances.map((child, index) => (
+          <FAQItem key={`faq-item-${index}`} {...(child.data as any)} />
         ))}
       </div>
     );

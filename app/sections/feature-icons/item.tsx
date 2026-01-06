@@ -7,6 +7,9 @@ interface FeatureIconsItemData {
   title?: string;
   description?: string;
   layout?: "vertical" | "horizontal";
+  iconWidth?: number;
+  titleFontSize?: number;
+  descriptionFontSize?: number;
   bgColor?: string;
   iconColor?: string;
   textColor?: string;
@@ -23,6 +26,9 @@ export const FeatureIconsItem = forwardRef<
     title,
     description,
     layout = "vertical",
+    iconWidth = 48,
+    titleFontSize = 16,
+    descriptionFontSize = 14,
     bgColor = "#FFF5E6",
     iconColor = "#FF6B35",
     textColor = "#000000",
@@ -39,7 +45,7 @@ export const FeatureIconsItem = forwardRef<
   return (
     <div
       ref={ref}
-      className={`flex ${isHorizontal ? "flex-row items-start" : "flex-col items-center"} ${isHorizontal ? "text-left" : "text-center"} p-6 rounded-lg gap-4`}
+      className={`flex ${isHorizontal ? "flex-row items-center" : "flex-col items-center"} ${isHorizontal ? "text-left" : "text-center"} px-3 py-4 rounded-lg gap-4`}
       style={{
         backgroundColor: bgColor,
         color: textColor,
@@ -52,23 +58,33 @@ export const FeatureIconsItem = forwardRef<
           <img
             src={iconUrl}
             alt={title || ""}
-            className="w-12 h-12 object-contain"
+            className="object-contain"
+            style={{
+              width: `${iconWidth}px`,
+              height: `${iconWidth}px`,
+            }}
           />
         </div>
       )}
       <div className={isHorizontal ? "flex-1" : ""}>
         {title && (
           <h3 
-            className={`font-semibold text-base ${isHorizontal ? "mb-2" : "mb-2"}`}
-            style={{ color: textColor }}
+            className={`font-semibold ${isHorizontal ? "mb-2" : "mb-2"}`}
+            style={{ 
+              color: textColor,
+              fontSize: `${titleFontSize}px`,
+            }}
           >
             {title}
           </h3>
         )}
         {description && (
           <p 
-            className="text-sm leading-relaxed"
-            style={{ color: textColor }}
+            className="leading-relaxed whitespace-pre-line"
+            style={{ 
+              color: textColor,
+              fontSize: `${descriptionFontSize}px`,
+            }}
           >
             {description}
           </p>
@@ -101,7 +117,7 @@ export const schema = createSchema({
           defaultValue: "Feature",
         },
         {
-          type: "richtext",
+          type: "textarea",
           name: "description",
           label: "Description",
         },
@@ -120,6 +136,47 @@ export const schema = createSchema({
               { value: "vertical", label: "Vertical (Icon Top)" },
               { value: "horizontal", label: "Horizontal (Icon Left)" },
             ],
+          },
+        },
+        {
+          type: "range",
+          name: "iconWidth",
+          label: "Icon Width",
+          defaultValue: 48,
+          configs: {
+            min: 24,
+            max: 120,
+            step: 4,
+            unit: "px",
+          },
+        },
+      ],
+    },
+    {
+      group: "Typography",
+      inputs: [
+        {
+          type: "range",
+          name: "titleFontSize",
+          label: "Title Font Size",
+          defaultValue: 16,
+          configs: {
+            min: 12,
+            max: 32,
+            step: 1,
+            unit: "px",
+          },
+        },
+        {
+          type: "range",
+          name: "descriptionFontSize",
+          label: "Description Font Size",
+          defaultValue: 14,
+          configs: {
+            min: 10,
+            max: 24,
+            step: 1,
+            unit: "px",
           },
         },
       ],

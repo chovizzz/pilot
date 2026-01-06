@@ -27,6 +27,7 @@ export function getWeaverseCsp(
       "cdn.alireviews.io",
       "cdn.jsdelivr.net",
       "*.alicdn.com",
+      "accounts.shopify.com",
       ...weaverseHosts,
     ],
     connectSrc: ["vimeo.com", "*.google-analytics.com", ...weaverseHosts],

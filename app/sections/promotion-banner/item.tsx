@@ -108,13 +108,13 @@ export const schema = createSchema({
       group: "Content",
       inputs: [
         {
-          type: "richtext",
+          type: "textarea",
           name: "title",
           label: "Title",
           defaultValue: "🏆 Must-Have Home Upgrade",
         },
         {
-          type: "richtext",
+          type: "textarea",
           name: "description",
           label: "Description",
           defaultValue: "Trusted by 10,000+ Households",
