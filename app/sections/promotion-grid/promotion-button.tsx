@@ -3,7 +3,7 @@ import {
   type HydrogenComponentProps,
   type WeaverseImage,
 } from "@weaverse/hydrogen";
-import { forwardRef, useEffect, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { useAnimation } from "~/hooks/use-animation";
 
 interface PromotionButtonData {
@@ -61,6 +61,8 @@ export const PromotionButton = forwardRef<
 
   const animation = useAnimation();
   const [isSticky, setIsSticky] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Extract image URLs from WeaverseImage objects or strings
   const arrowIconUrl = arrowIcon
@@ -81,22 +83,51 @@ export const PromotionButton = forwardRef<
 
   // Handle sticky behavior when scrolling out of viewport
   useEffect(() => {
-    if (!enableSticky) return;
+    if (!enableSticky) {
+      setIsSticky(false);
+      return;
+    }
+
+    const wrapper = wrapperRef.current;
+    const container = containerRef.current;
+    if (!wrapper || !container) return;
+
+    // Store initial height to maintain wrapper height when container becomes fixed
+    const initialHeight = container.offsetHeight;
+    wrapper.style.minHeight = `${initialHeight}px`;
+
+    let lastStickyState = false;
+    let ticking = false;
 
     const handleScroll = () => {
-      const element = document.getElementById("promotion-button-container");
-      if (!element) return;
+      if (ticking) return;
+      ticking = true;
 
-      const rect = element.getBoundingClientRect();
-      const isOutOfViewport = rect.bottom < 0;
+      requestAnimationFrame(() => {
+        const rect = wrapper.getBoundingClientRect();
+        // Check if the wrapper's bottom edge has scrolled past the viewport
+        // Only set sticky when wrapper is completely above viewport
+        const shouldBeSticky = rect.bottom <= 0;
 
-      setIsSticky(isOutOfViewport);
+        // Only update state if it changed to prevent unnecessary re-renders
+        if (shouldBeSticky !== lastStickyState) {
+          setIsSticky(shouldBeSticky);
+          lastStickyState = shouldBeSticky;
+        }
+
+        ticking = false;
+      });
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll(); // Check initial state
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (wrapper) {
+        wrapper.style.minHeight = "";
+      }
+    };
   }, [enableSticky]);
 
   // Create shrink animation keyframes with configurable scale
@@ -111,25 +142,36 @@ export const PromotionButton = forwardRef<
 
   return (
     <div
-      id="promotion-button-container"
-      ref={ref}
+      ref={wrapperRef}
       {...rest}
-      className={`w-full mx-auto leading-tight button7-container buttonSolt ${
-        isSticky ? "fixed left-0 right-0 z-50" : ""
-      }`}
-      style={{
-        backgroundColor: "#ffffff",
-        ...(isSticky
-          ? {
-              bottom: `${stickyOffset}px`,
-              padding: `${padding}px 30px`,
-              boxShadow: "0 -2px 10px rgba(0, 0, 0, 0.1)",
-            }
-          : {}),
-      }}
+      className="relative"
       data-motion="fade-up"
       {...animation}
     >
+      <div
+        ref={(node) => {
+          containerRef.current = node;
+          if (typeof ref === "function") {
+            ref(node);
+          } else if (ref) {
+            ref.current = node;
+          }
+        }}
+        id="promotion-button-container"
+        className={`w-full mx-auto leading-tight button7-container buttonSolt ${
+          isSticky ? "fixed left-0 right-0 z-50" : ""
+        }`}
+        style={{
+          backgroundColor: "#ffffff",
+          ...(isSticky
+            ? {
+                bottom: `${stickyOffset}px`,
+                padding: `${padding}px 30px`,
+                boxShadow: "0 -2px 10px rgba(0, 0, 0, 0.1)",
+              }
+            : {}),
+        }}
+      >
       <style>{shrinkKeyframes}</style>
       <div
         className="main-content mx-auto"
@@ -233,6 +275,7 @@ export const PromotionButton = forwardRef<
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ interface StockAlertData {
   leftText?: string;
   rightText?: string;
   leftIcon?: WeaverseImage | string;
+  leftIconWidth?: number;
   leftBgColor?: string;
   rightGradientStart?: string;
   rightGradientEnd?: string;
@@ -27,6 +28,7 @@ export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
       leftText = "Only 100 left",
       rightText = "Hurry before the price goes back up!",
       leftIcon,
+      leftIconWidth = 12,
       leftBgColor = "#000000",
       rightGradientStart = "#ef7b2e",
       rightGradientEnd = "#fae2d2",
@@ -78,7 +80,7 @@ export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
     return (
       <Section ref={ref} {...rest}>
         <div
-          className={`flex items-center leading-none ${
+          className={`flex items-stretch leading-none ${
             sticky ? "sticky top-0 z-50" : ""
           }`}
           data-motion="fade-up"
@@ -95,14 +97,15 @@ export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
             }}
           >
             {leftIconUrl && (
-              <div className="shrink-0">
+              <div className="shrink-0 flex items-center">
                 <img
                   src={leftIconUrl}
                   alt=""
                   className="object-contain"
                   style={{
-                    width: "12px",
+                    width: `${leftIconWidth}px`,
                     height: "auto",
+                    maxHeight: "100%",
                     animation: `stock-alert-icon-rotate ${iconRotateSpeed}s linear infinite`,
                   }}
                 />
@@ -169,6 +172,20 @@ export const schema = createSchema({
           type: "image",
           name: "leftIcon",
           label: "Left Icon",
+        },
+        {
+          type: "range",
+          name: "leftIconWidth",
+          label: "Left Icon Width",
+          defaultValue: 12,
+          configs: {
+            min: 8,
+            max: 32,
+            step: 1,
+            unit: "px",
+          },
+          condition: (data: StockAlertData) => !!data.leftIcon,
+          helpText: "Width of the left icon",
         },
       ],
     },
@@ -286,6 +303,7 @@ export const schema = createSchema({
     rightTextSize: 14,
     scrollSpeed: 20,
     iconRotateSpeed: 3,
+    leftIconWidth: 12,
   },
 });
 
