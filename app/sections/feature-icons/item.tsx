@@ -6,6 +6,7 @@ interface FeatureIconsItemData {
   icon?: WeaverseImage | string;
   title?: string;
   description?: string;
+  layout?: "vertical" | "horizontal";
   bgColor?: string;
   iconColor?: string;
   textColor?: string;
@@ -21,6 +22,7 @@ export const FeatureIconsItem = forwardRef<
     icon,
     title,
     description,
+    layout = "vertical",
     bgColor = "#FFF5E6",
     iconColor = "#FF6B35",
     textColor = "#000000",
@@ -32,10 +34,12 @@ export const FeatureIconsItem = forwardRef<
     ? (typeof icon === "string" ? icon : icon.url)
     : null;
 
+  const isHorizontal = layout === "horizontal";
+
   return (
     <div
       ref={ref}
-      className="flex flex-col items-center text-center p-6 rounded-lg"
+      className={`flex ${isHorizontal ? "flex-row items-start" : "flex-col items-center"} ${isHorizontal ? "text-left" : "text-center"} p-6 rounded-lg gap-4`}
       style={{
         backgroundColor: bgColor,
         color: textColor,
@@ -44,7 +48,7 @@ export const FeatureIconsItem = forwardRef<
       {...animation}
     >
       {iconUrl && (
-        <div className="mb-4 flex items-center justify-center">
+        <div className={`flex items-center justify-center ${isHorizontal ? "shrink-0" : ""}`}>
           <img
             src={iconUrl}
             alt={title || ""}
@@ -52,22 +56,24 @@ export const FeatureIconsItem = forwardRef<
           />
         </div>
       )}
-      {title && (
-        <h3 
-          className="font-semibold text-base mb-2"
-          style={{ color: textColor }}
-        >
-          {title}
-        </h3>
-      )}
-      {description && (
-        <p 
-          className="text-sm leading-relaxed"
-          style={{ color: textColor }}
-        >
-          {description}
-        </p>
-      )}
+      <div className={isHorizontal ? "flex-1" : ""}>
+        {title && (
+          <h3 
+            className={`font-semibold text-base ${isHorizontal ? "mb-2" : "mb-2"}`}
+            style={{ color: textColor }}
+          >
+            {title}
+          </h3>
+        )}
+        {description && (
+          <p 
+            className="text-sm leading-relaxed"
+            style={{ color: textColor }}
+          >
+            {description}
+          </p>
+        )}
+      </div>
     </div>
   );
 });
@@ -98,6 +104,23 @@ export const schema = createSchema({
           type: "richtext",
           name: "description",
           label: "Description",
+        },
+      ],
+    },
+    {
+      group: "Layout",
+      inputs: [
+        {
+          type: "select",
+          name: "layout",
+          label: "Layout",
+          defaultValue: "vertical",
+          configs: {
+            options: [
+              { value: "vertical", label: "Vertical (Icon Top)" },
+              { value: "horizontal", label: "Horizontal (Icon Left)" },
+            ],
+          },
         },
       ],
     },
