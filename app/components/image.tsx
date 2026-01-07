@@ -30,7 +30,7 @@ export interface ImageProps
   };
 }
 
-export function Image({ ref, className, onLoad, ...rest }: ImageProps) {
+export function Image({ ref, className, onLoad, loading, ...rest }: ImageProps) {
   /**
    * Use useRef for HydrogenImage, so we can access the HydrogenImage's ref
    * even when using ref prop for the outer div
@@ -44,6 +44,9 @@ export function Image({ ref, className, onLoad, ...rest }: ImageProps) {
       onLoad?.({} as React.SyntheticEvent<HTMLImageElement>);
     }
   }, [onLoad]);
+
+  // Add fetchpriority="high" when loading is "eager" for better performance
+  const fetchPriority = loading === "eager" ? "high" : undefined;
 
   return (
     <div
@@ -65,6 +68,8 @@ export function Image({ ref, className, onLoad, ...rest }: ImageProps) {
           setLoaded(true);
           onLoad?.(e);
         }}
+        loading={loading}
+        fetchPriority={fetchPriority}
         {...rest}
       />
     </div>
