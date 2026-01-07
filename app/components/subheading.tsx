@@ -53,14 +53,19 @@ function SubHeading(props: SubHeadingProps) {
     animationDelay,
     ...rest
   } = props;
+  
+  // Ensure style object always exists to prevent FOUC
+  const style: React.CSSProperties = color ? { color } : {};
+  
   return (
     <Tag
       ref={ref}
       {...rest}
       {...(animate ? { "data-motion": animationType } : {})}
       {...(animate && animationDelay !== undefined ? { "data-delay": String(animationDelay) } : {})}
-      style={{ color }}
+      style={style}
       className={cn(variants({ size, weight, alignment, className }))}
+      suppressHydrationWarning
     >
       {content}
     </Tag>

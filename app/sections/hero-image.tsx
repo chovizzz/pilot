@@ -139,10 +139,31 @@ export default function HeroImage(props: HeroImageProps & SectionProps) {
     }
   ` : "";
 
+  // Add CSS to ensure text elements maintain their color during SSR and hydration
+  // This prevents FOUC (Flash of Unstyled Content) where text appears black before turning white
+  const textColorStyle = `
+    .hero-image-responsive [data-wv-type="subheading"],
+    .hero-image-responsive [data-wv-type="heading"],
+    .hero-image-responsive [data-wv-type="paragraph"] {
+      will-change: color;
+    }
+  `;
+
+  // Initial state for animated elements - hide them until animation triggers
+  // This prevents FOUC where text appears in default color before animation
+  const animationStyle = `
+    .hero-image-responsive.animated-scope [data-motion] {
+      opacity: 0;
+      will-change: opacity, transform;
+    }
+  `;
+
   return (
     <>
       <style>{responsiveMaxWidthStyle}</style>
       {aspectRatioStyle && <style>{aspectRatioStyle}</style>}
+      <style>{textColorStyle}</style>
+      <style>{animationStyle}</style>
       <Section
         ref={setRefs}
         {...rest}

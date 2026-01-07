@@ -63,17 +63,22 @@ function Paragraph(props: ParagraphProps) {
     animationDelay,
     ...rest
   } = props;
+  
+  // Ensure style object always exists to prevent FOUC
+  const style: React.CSSProperties = color ? { color } : {};
+  
   return (
     <Tag
       ref={ref}
       {...(animate ? { "data-motion": animationType } : {})}
       {...(animate && animationDelay !== undefined ? { "data-delay": String(animationDelay) } : {})}
       {...rest}
-      style={{ color }}
+      style={style}
       className={clsx(variants({ textSize, width, alignment, className }))}
       suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: content }}
-    />
+    >
+      {content}
+    </Tag>
   );
 }
 
@@ -87,7 +92,7 @@ export const schema = createSchema({
       group: "Paragraph",
       inputs: [
         {
-          type: "richtext",
+          type: "textarea",
           name: "content",
           label: "Content",
           defaultValue:
