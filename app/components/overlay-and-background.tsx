@@ -5,7 +5,9 @@ import { Overlay } from "./overlay";
 
 export interface OverlayAndBackgroundProps
   extends Partial<BackgroundImageProps>,
-    Partial<OverlayProps> {}
+    Partial<OverlayProps> {
+  loading?: "lazy" | "eager";
+}
 
 export function OverlayAndBackground(props: OverlayAndBackgroundProps) {
   const {
@@ -16,6 +18,7 @@ export function OverlayAndBackground(props: OverlayAndBackgroundProps) {
     overlayColor,
     overlayColorHover,
     overlayOpacity,
+    loading = "lazy",
   } = props;
   return (
     <>
@@ -23,6 +26,7 @@ export function OverlayAndBackground(props: OverlayAndBackgroundProps) {
         backgroundImage={backgroundImage}
         backgroundFit={backgroundFit}
         backgroundPosition={backgroundPosition}
+        loading={loading}
       />
       <Overlay
         enableOverlay={enableOverlay}

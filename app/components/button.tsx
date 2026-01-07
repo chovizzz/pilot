@@ -84,6 +84,8 @@ export interface ButtonProps
   loading?: boolean;
   children?: React.ReactNode;
   animate?: boolean;
+  animationType?: "fade-up" | "zoom-in" | "slide-in";
+  animationDelay?: number;
 }
 
 export function Button(props: ButtonProps) {
@@ -101,6 +103,8 @@ export function Button(props: ButtonProps) {
     borderColorHover,
     style = {},
     animate = true,
+    animationType = "fade-up",
+    animationDelay,
     children,
     ...rest
   } = props;
@@ -128,7 +132,10 @@ export function Button(props: ButtonProps) {
   }
 
   if (animate) {
-    rest["data-motion"] = "fade-up";
+    rest["data-motion"] = animationType;
+    if (animationDelay !== undefined) {
+      rest["data-delay"] = String(animationDelay);
+    }
   }
 
   return (

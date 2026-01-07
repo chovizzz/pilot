@@ -27,18 +27,36 @@ export const FAQ = forwardRef<HTMLElement, FAQProps>((props, ref) => {
   } = props as FAQData & typeof props;
   const animation = useAnimation();
 
+  // Create responsive maxWidth style that only applies on lg (1024px) and above
+  // If maxWidth is 0 or falsy, don't apply max-width (unlimited)
+  const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
+    .faq-responsive {
+      width: 100%;
+    }
+    @media (min-width: 1024px) {
+      .faq-responsive {
+        max-width: ${maxWidth}px;
+      }
+    }
+  ` : `
+    .faq-responsive {
+      width: 100%;
+    }
+  `;
+
   return (
     <Section
       ref={ref}
       {...rest}
+      className="faq-responsive mx-auto"
       style={{
         backgroundColor: bgColor,
         padding: `${padding}px 20px 15px`,
-        maxWidth: `${maxWidth}px`,
       }}
       data-motion="fade-up"
       {...animation}
     >
+      <style>{responsiveMaxWidthStyle}</style>
       <div className="w-full max-w-7xl mx-auto">
         {heading && (
           <div className="text-center mb-3 lg:mb-6">
@@ -88,11 +106,12 @@ export const schema = createSchema({
           label: "Max Width",
           defaultValue: 500,
           configs: {
-            min: 300,
+            min: 0,
             max: 800,
             step: 10,
             unit: "px",
           },
+          helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
         },
         {
           type: "range",

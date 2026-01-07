@@ -1,6 +1,7 @@
 import { createSchema, type HydrogenComponentProps, type WeaverseImage } from "@weaverse/hydrogen";
 import { forwardRef } from "react";
 import { useAnimation } from "~/hooks/use-animation";
+import { Image } from "~/components/image";
 
 interface FeatureIconsItemData {
   icon?: WeaverseImage | string;
@@ -35,10 +36,12 @@ export const FeatureIconsItem = forwardRef<
   } = props as FeatureIconsItemData & typeof props;
   const animation = useAnimation();
 
-  // Extract image URL from WeaverseImage object or string
-  const iconUrl = icon 
-    ? (typeof icon === "string" ? icon : icon.url)
-    : null;
+  // Prepare image data for Image component
+  const iconData: Partial<WeaverseImage> | undefined = icon
+    ? typeof icon === "string"
+      ? { url: icon, altText: title || "Icon" }
+      : icon
+    : undefined;
 
   const isHorizontal = layout === "horizontal";
 
@@ -53,16 +56,18 @@ export const FeatureIconsItem = forwardRef<
       data-motion="fade-up"
       {...animation}
     >
-      {iconUrl && (
+      {iconData && (
         <div className={`flex items-center justify-center ${isHorizontal ? "shrink-0" : ""}`}>
-          <img
-            src={iconUrl}
-            alt={title || ""}
+          <Image
+            data={iconData}
+            alt={title || "Icon"}
             className="object-contain"
             style={{
               width: `${iconWidth}px`,
               height: `${iconWidth}px`,
             }}
+            loading="lazy"
+            sizes="auto"
           />
         </div>
       )}

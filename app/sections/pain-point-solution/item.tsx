@@ -1,6 +1,7 @@
 import { createSchema, type HydrogenComponentProps, type WeaverseImage } from "@weaverse/hydrogen";
 import { forwardRef } from "react";
 import { useAnimation } from "~/hooks/use-animation";
+import { Image } from "~/components/image";
 
 interface PainPointSolutionItemData {
   painPointTitle?: string;
@@ -76,18 +77,18 @@ export const PainPointSolutionItem = forwardRef<
 
   const animation = useAnimation();
 
-  // Extract image URL from WeaverseImage object or string
-  const painPointImageUrl = painPointImage
+  // Prepare image data for Image component
+  const painPointImageData: Partial<WeaverseImage> | undefined = painPointImage
     ? typeof painPointImage === "string"
-      ? painPointImage
-      : painPointImage.url
-    : null;
+      ? { url: painPointImage, altText: "Pain point" }
+      : painPointImage
+    : undefined;
 
   return (
     <div
       ref={ref}
       {...rest}
-      className="comment14-list-item flex-shrink-0"
+      className="comment14-list-item shrink-0"
       style={{ width: `${itemWidth}%` }}
       data-motion="slide-in"
       {...animation}
@@ -99,7 +100,7 @@ export const PainPointSolutionItem = forwardRef<
       >
         <div className="flex gap-2 items-start mb-2">
           <div
-            className="flex-shrink-0 rounded-full p-1"
+            className="shrink-0 rounded-full p-1"
             style={{ backgroundColor: "#ff0000" }}
           >
             <ExclamationIcon />
@@ -129,17 +130,19 @@ export const PainPointSolutionItem = forwardRef<
             )}
           </div>
         </div>
-        {painPointImageUrl && (
+        {painPointImageData && (
           <div
             className="imgage-section-container rounded-md overflow-hidden"
             style={{
               aspectRatio: "500 / 386",
             }}
           >
-            <img
-              src={painPointImageUrl}
-              alt=""
+            <Image
+              data={painPointImageData}
+              alt="Pain point"
               className="w-full h-full object-cover"
+              loading="lazy"
+              sizes="auto"
             />
           </div>
         )}
@@ -151,7 +154,7 @@ export const PainPointSolutionItem = forwardRef<
         style={{ backgroundColor: solutionBgColor }}
       >
         <div
-          className="flex-shrink-0 rounded-full p-1"
+          className="shrink-0 rounded-full p-1"
           style={{ backgroundColor: "#4ad37b" }}
         >
           <CheckmarkIcon />

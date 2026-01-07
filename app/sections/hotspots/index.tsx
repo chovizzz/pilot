@@ -75,6 +75,7 @@ function Hotspots(props: HotspotsProps) {
           sizes="auto"
           className="z-0"
           data-motion="zoom-in"
+          loading="lazy"
         />
         {children}
       </div>

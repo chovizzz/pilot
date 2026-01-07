@@ -77,6 +77,9 @@ export interface LinkData
     Partial<LinkStyles>,
     VariantProps<typeof variants> {
   text?: string;
+  animate?: boolean;
+  animationType?: "fade-up" | "zoom-in" | "slide-in";
+  animationDelay?: number;
 }
 
 export interface LinkProps
@@ -150,6 +153,9 @@ export function Link(props: LinkProps) {
     borderColorHover,
     children,
     target,
+    animate = true,
+    animationType = "fade-up",
+    animationDelay,
     ...rest
   } = props;
   const { enableViewTransition } = useThemeSettings();
@@ -181,6 +187,8 @@ export function Link(props: LinkProps) {
       style={style}
       className={cn(variants({ variant }), className)}
       target={target !== undefined ? target : isExternal ? "_blank" : undefined}
+      {...(animate ? { "data-motion": animationType } : {})}
+      {...(animate && animationDelay !== undefined ? { "data-delay": String(animationDelay) } : {})}
       {...rest}
     >
       {children || text}
@@ -273,6 +281,42 @@ export const linkInputs: InspectorGroup["inputs"] = [
     label: "Button custom styles",
   },
   ...linkStylesInputs,
+  {
+    type: "switch",
+    name: "animate",
+    label: "Enable Animation",
+    defaultValue: true,
+    helpText: "Enable entrance animation when element comes into view",
+  },
+  {
+    type: "select",
+    name: "animationType",
+    label: "Animation Type",
+    configs: {
+      options: [
+        { value: "fade-up", label: "Fade Up" },
+        { value: "zoom-in", label: "Zoom In" },
+        { value: "slide-in", label: "Slide In" },
+      ],
+    },
+    defaultValue: "fade-up",
+    condition: (data: LinkData) => data.animate !== false,
+    helpText: "Animation style for this button",
+  },
+  {
+    type: "range",
+    name: "animationDelay",
+    label: "Animation Delay (seconds)",
+    configs: {
+      min: 0,
+      max: 2,
+      step: 0.1,
+      unit: "s",
+    },
+    defaultValue: undefined,
+    condition: (data: LinkData) => data.animate !== false,
+    helpText: "Delay before animation starts. Leave empty to use default sequential delay.",
+  },
 ];
 
 export const schema = createSchema({

@@ -29,6 +29,7 @@ export interface SectionProps<T = any>
   borderRadius?: number;
   containerClassName?: string;
   children?: React.ReactNode;
+  loading?: "lazy" | "eager";
 }
 
 const variants = cva("relative", {
@@ -98,6 +99,7 @@ export function Section(props: SectionProps) {
     className,
     children,
     containerClassName,
+    loading = "lazy",
     style = {},
     ...rest
   } = props;
@@ -123,7 +125,7 @@ export function Section(props: SectionProps) {
           "rounded-(--section-radius) bg-(--section-bg-color)",
       )}
     >
-      {!isBgForContent && <OverlayAndBackground {...props} />}
+      {!isBgForContent && <OverlayAndBackground {...props} loading={loading} />}
       <div
         className={cn(
           variants({ gap, width, verticalPadding, overflow }),
@@ -135,7 +137,7 @@ export function Section(props: SectionProps) {
           containerClassName,
         )}
       >
-        {isBgForContent && <OverlayAndBackground {...props} />}
+        {isBgForContent && <OverlayAndBackground {...props} loading={loading} />}
         {children}
       </div>
     </Component>

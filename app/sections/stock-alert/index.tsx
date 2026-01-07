@@ -1,6 +1,7 @@
 import { createSchema, type HydrogenComponentProps, type WeaverseImage } from "@weaverse/hydrogen";
 import { forwardRef } from "react";
 import { Section } from "~/components/section";
+import { Image } from "~/components/image";
 import { useAnimation } from "~/hooks/use-animation";
 
 interface StockAlertData {
@@ -18,6 +19,7 @@ interface StockAlertData {
   scrollSpeed?: number;
   iconRotateSpeed?: number;
   sticky?: boolean;
+  maxWidth?: number;
 }
 
 type StockAlertProps = HydrogenComponentProps<StockAlertData>;
@@ -39,15 +41,18 @@ export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
       scrollSpeed = 20,
       iconRotateSpeed = 3,
       sticky = false,
+      maxWidth = 500,
       ...rest
     } = props as StockAlertData & typeof props;
 
     const animation = useAnimation();
 
-    // Extract image URL from WeaverseImage object or string
-    const leftIconUrl = leftIcon 
-      ? (typeof leftIcon === "string" ? leftIcon : leftIcon.url)
-      : null;
+    // Prepare image data for Image component
+    const leftIconData: Partial<WeaverseImage> | undefined = leftIcon
+      ? typeof leftIcon === "string"
+        ? { url: leftIcon, altText: "Left icon" }
+        : leftIcon
+      : undefined;
 
     // Create marquee animation for scrolling text
     // Each text segment is 100% width, so we need to scroll 100% to fully move past the first segment
@@ -77,8 +82,25 @@ export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
       z-index: 2;
     }`;
 
+    // Create responsive maxWidth style that only applies on lg (1024px) and above
+    // If maxWidth is 0 or falsy, don't apply max-width (unlimited)
+    const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
+      .stock-alert-responsive {
+        width: 100%;
+      }
+      @media (min-width: 1024px) {
+        .stock-alert-responsive {
+          max-width: ${maxWidth}px;
+        }
+      }
+    ` : `
+      .stock-alert-responsive {
+        width: 100%;
+      }
+    `;
+
     return (
-      <Section ref={ref} {...rest}>
+      <Section ref={ref} {...rest} className="stock-alert-responsive mx-auto">
         <div
           className={`flex items-stretch leading-none ${
             sticky ? "sticky top-0 z-50" : ""
@@ -87,6 +109,7 @@ export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
           {...animation}
         >
           <style>{marqueeKeyframes}</style>
+          <style>{responsiveMaxWidthStyle}</style>
           {/* Left section - Black background with triangle */}
           <div
             className="py-2 px-3 font-bold flex items-center gap-2 shrink-0 relative stock-alert-left-section"
@@ -96,10 +119,10 @@ export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
               fontSize: `${leftTextSize}px`,
             }}
           >
-            {leftIconUrl && (
+            {leftIconData && (
               <div className="shrink-0 flex items-center">
-                <img
-                  src={leftIconUrl}
+                <Image
+                  data={leftIconData}
                   alt=""
                   className="object-contain"
                   style={{
@@ -108,6 +131,8 @@ export const StockAlert = forwardRef<HTMLElement, StockAlertProps>(
                     maxHeight: "100%",
                     animation: `stock-alert-icon-rotate ${iconRotateSpeed}s linear infinite`,
                   }}
+                  loading="lazy"
+                  sizes="auto"
                 />
               </div>
             )}
@@ -288,6 +313,19 @@ export const schema = createSchema({
           },
           helpText: "Animation duration for icon rotation (lower = faster)",
         },
+        {
+          type: "range",
+          name: "maxWidth",
+          label: "Max Width",
+          defaultValue: 500,
+          configs: {
+            min: 0,
+            max: 1600,
+            step: 20,
+            unit: "px",
+          },
+          helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
+        },
       ],
     },
   ],
@@ -304,6 +342,7 @@ export const schema = createSchema({
     scrollSpeed: 20,
     iconRotateSpeed: 3,
     leftIconWidth: 12,
+    maxWidth: 500,
   },
 });
 

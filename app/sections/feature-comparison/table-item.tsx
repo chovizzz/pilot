@@ -4,6 +4,7 @@ import {
   type WeaverseImage,
 } from "@weaverse/hydrogen";
 import { forwardRef } from "react";
+import { Image } from "~/components/image";
 
 interface FeatureComparisonTableItemData {
   feature?: string;
@@ -47,17 +48,17 @@ export const FeatureComparisonTableItem = forwardRef<
   // Use item-specific height if provided, otherwise use row height
   const height = itemHeight || rowHeight;
 
-  // Extract image URLs from WeaverseImage objects or strings
-  const ourProductImageUrl = ourProductImage
+  // Prepare image data for Image component
+  const ourProductImageData: Partial<WeaverseImage> | undefined = ourProductImage
     ? typeof ourProductImage === "string"
-      ? ourProductImage
-      : ourProductImage.url
-    : null;
-  const competitorImageUrl = competitorImage
+      ? { url: ourProductImage, altText: "Our product" }
+      : ourProductImage
+    : undefined;
+  const competitorImageData: Partial<WeaverseImage> | undefined = competitorImage
     ? typeof competitorImage === "string"
-      ? competitorImage
-      : competitorImage.url
-    : null;
+      ? { url: competitorImage, altText: "Competitor" }
+      : competitorImage
+    : undefined;
 
   return (
     <tr
@@ -79,9 +80,9 @@ export const FeatureComparisonTableItem = forwardRef<
           showBorder ? { border: `1px solid ${borderColor}` } : undefined
         }
       >
-        {ourProductImageUrl ? (
-          <img
-            src={ourProductImageUrl}
+        {ourProductImageData ? (
+          <Image
+            data={ourProductImageData}
             alt=""
             className="mx-auto object-contain"
             style={{
@@ -89,6 +90,8 @@ export const FeatureComparisonTableItem = forwardRef<
               maxWidth: "100%",
               ...(imageWidth > 0 ? { width: `${imageWidth}px`, height: "auto" } : {}),
             }}
+            loading="lazy"
+            sizes="auto"
           />
         ) : (
           <div dangerouslySetInnerHTML={{ __html: ourProduct || "" }} />
@@ -100,9 +103,9 @@ export const FeatureComparisonTableItem = forwardRef<
           showBorder ? { border: `1px solid ${borderColor}` } : undefined
         }
       >
-        {competitorImageUrl ? (
-          <img
-            src={competitorImageUrl}
+        {competitorImageData ? (
+          <Image
+            data={competitorImageData}
             alt=""
             className="mx-auto object-contain"
             style={{
@@ -110,6 +113,8 @@ export const FeatureComparisonTableItem = forwardRef<
               maxWidth: "100%",
               ...(imageWidth > 0 ? { width: `${imageWidth}px`, height: "auto" } : {}),
             }}
+            loading="lazy"
+            sizes="auto"
           />
         ) : (
           <div dangerouslySetInnerHTML={{ __html: competitor || "" }} />

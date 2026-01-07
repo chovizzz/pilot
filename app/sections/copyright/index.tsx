@@ -5,6 +5,7 @@ import {
 } from "@weaverse/hydrogen";
 import { forwardRef } from "react";
 import { Section } from "~/components/section";
+import { Image } from "~/components/image";
 import { useAnimation } from "~/hooks/use-animation";
 
 interface CopyrightData {
@@ -16,6 +17,7 @@ interface CopyrightData {
   textSize?: number;
   logoWidth?: number;
   padding?: number;
+  maxWidth?: number;
 }
 
 type CopyrightProps = HydrogenComponentProps<CopyrightData>;
@@ -31,23 +33,41 @@ export const Copyright = forwardRef<HTMLElement, CopyrightProps>(
       textSize = 14,
       logoWidth = 100,
       padding = 32,
+      maxWidth = 500,
       ...rest
     } = props as CopyrightData & typeof props;
 
     const animation = useAnimation();
 
-    // Extract logo URL from WeaverseImage object or string
-    const logoUrl = logo
+    // Prepare image data for Image component
+    const logoData: Partial<WeaverseImage> | undefined = logo
       ? typeof logo === "string"
-        ? logo
-        : logo.url
-      : null;
+        ? { url: logo, altText: "Logo" }
+        : logo
+      : undefined;
+
+    // Create responsive maxWidth style that only applies on lg (1024px) and above
+    // If maxWidth is 0 or falsy, don't apply max-width (unlimited)
+    const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
+      .copyright-responsive {
+        width: 100%;
+      }
+      @media (min-width: 1024px) {
+        .copyright-responsive {
+          max-width: ${maxWidth}px;
+        }
+      }
+    ` : `
+      .copyright-responsive {
+        width: 100%;
+      }
+    `;
 
     return (
       <Section
         ref={ref}
         {...rest}
-        className="footer-page w-full lg:mx-auto mx-auto"
+        className="footer-page w-full mx-auto copyright-responsive"
         style={{
           backgroundColor: bgColor,
           paddingTop: `${padding}px`,
@@ -56,15 +76,18 @@ export const Copyright = forwardRef<HTMLElement, CopyrightProps>(
         data-motion="fade-up"
         {...animation}
       >
+        <style>{responsiveMaxWidthStyle}</style>
         <div className="footer-content flex flex-col justify-center items-center max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
-          {logoUrl && (
-            <img
-              src={logoUrl}
+          {logoData && (
+            <Image
+              data={logoData}
               alt=""
-              className="mb-3 h-auto"
+              className="mb-3 h-auto flex justify-center"
               style={{
                 width: `${logoWidth}px`,
               }}
+              loading="lazy"
+              sizes="auto"
             />
           )}
           <div
@@ -155,6 +178,19 @@ export const schema = createSchema({
             unit: "px",
           },
         },
+        {
+          type: "range",
+          name: "maxWidth",
+          label: "Max Width",
+          defaultValue: 500,
+          configs: {
+            min: 0,
+            max: 1600,
+            step: 20,
+            unit: "px",
+          },
+          helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
+        },
       ],
     },
     {
@@ -200,6 +236,7 @@ export const schema = createSchema({
     textSize: 14,
     logoWidth: 100,
     padding: 32,
+    maxWidth: 500,
   },
 });
 

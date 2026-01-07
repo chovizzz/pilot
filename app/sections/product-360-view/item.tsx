@@ -1,5 +1,6 @@
 import { createSchema, type HydrogenComponentProps, type WeaverseImage } from "@weaverse/hydrogen";
 import { forwardRef } from "react";
+import { Image } from "~/components/image";
 import { useAnimation } from "~/hooks/use-animation";
 
 interface Product360ViewItemData {
@@ -18,14 +19,14 @@ export const Product360ViewItem = forwardRef<
 
   const animation = useAnimation();
 
-  // Extract image URL from WeaverseImage object or string
-  const imageUrl = image
+  // Prepare image data for Image component
+  const imageData: Partial<WeaverseImage> | undefined = image
     ? typeof image === "string"
-      ? image
-      : image.url
-    : null;
+      ? { url: image, altText: "Product image" }
+      : image
+    : undefined;
 
-  if (!imageUrl) {
+  if (!imageData) {
     return null;
   }
 
@@ -86,13 +87,15 @@ export const Product360ViewItem = forwardRef<
             "--rotation-duration": `${rotationDuration}s`,
           } as React.CSSProperties}
         >
-          <img
-            src={imageUrl}
+          <Image
+            data={imageData}
             alt=""
-            width="1000"
-            height="1000"
+            width={1000}
+            height={1000}
             className="w-full h-full object-contain pointer-events-none product-360-image"
             data-rotation-duration={rotationDuration}
+            loading="lazy"
+            sizes="auto"
           />
         </div>
       </div>

@@ -25,7 +25,11 @@ export async function loader(args: LoaderFunctionArgs) {
 
   // Load async data in parallel for better performance
   const [weaverseData, { shop }] = await Promise.all([
-    context.weaverse.loadPage({ type }),
+    context.weaverse.loadPage({ type, strategy: {
+      mode: "public",
+      maxAge: 3600, // Cache for 1 hour
+      staleWhileRevalidate: 86400, // Serve stale for 24 hours while revalidating
+    }, }),
     context.storefront.query<ShopQuery>(SHOP_QUERY),
   ]);
 

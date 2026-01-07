@@ -10,6 +10,9 @@ export interface ParagraphProps
   as?: "p" | "div";
   content: string;
   color?: string;
+  animate?: boolean;
+  animationType?: "fade-up" | "zoom-in" | "slide-in";
+  animationDelay?: number;
 }
 
 const variants = cva("paragraph", {
@@ -55,12 +58,16 @@ function Paragraph(props: ParagraphProps) {
     color,
     alignment,
     className,
+    animate = true,
+    animationType = "fade-up",
+    animationDelay,
     ...rest
   } = props;
   return (
     <Tag
       ref={ref}
-      data-motion="fade-up"
+      {...(animate ? { "data-motion": animationType } : {})}
+      {...(animate && animationDelay !== undefined ? { "data-delay": String(animationDelay) } : {})}
       {...rest}
       style={{ color }}
       className={clsx(variants({ textSize, width, alignment, className }))}
@@ -160,6 +167,42 @@ export const schema = createSchema({
             ],
           },
           defaultValue: "center",
+        },
+        {
+          type: "switch",
+          name: "animate",
+          label: "Enable Animation",
+          defaultValue: true,
+          helpText: "Enable entrance animation when element comes into view",
+        },
+        {
+          type: "select",
+          name: "animationType",
+          label: "Animation Type",
+          configs: {
+            options: [
+              { value: "fade-up", label: "Fade Up" },
+              { value: "zoom-in", label: "Zoom In" },
+              { value: "slide-in", label: "Slide In" },
+            ],
+          },
+          defaultValue: "fade-up",
+          condition: (data: ParagraphProps) => data.animate !== false,
+          helpText: "Animation style for this paragraph",
+        },
+        {
+          type: "range",
+          name: "animationDelay",
+          label: "Animation Delay (seconds)",
+          configs: {
+            min: 0,
+            max: 2,
+            step: 0.1,
+            unit: "s",
+          },
+          defaultValue: undefined,
+          condition: (data: ParagraphProps) => data.animate !== false,
+          helpText: "Delay before animation starts. Leave empty to use default sequential delay.",
         },
       ],
     },

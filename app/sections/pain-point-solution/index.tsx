@@ -38,18 +38,35 @@ export const PainPointSolution = forwardRef<
 
   const animation = useAnimation();
 
+  // Create responsive maxWidth style that only applies on lg (1024px) and above
+  // If maxWidth is 0 or falsy, don't apply max-width (unlimited)
+  const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
+    .comment14-container-responsive {
+      width: 100%;
+    }
+    @media (min-width: 1024px) {
+      .comment14-container-responsive {
+        max-width: ${maxWidth}px;
+      }
+    }
+  ` : `
+    .comment14-container-responsive {
+      width: 100%;
+    }
+  `;
+
   return (
     <div
       ref={ref}
       {...rest}
-      className="w-full mx-auto leading-tight comment14-container"
+      className="w-full mx-auto leading-tight comment14-container comment14-container-responsive"
       style={{
         backgroundColor: bgColor,
-        maxWidth: `${maxWidth}px`,
       }}
       data-motion="fade-up"
       {...animation}
     >
+      <style>{responsiveMaxWidthStyle}</style>
       <div
         className="main-content max-w-7xl mx-auto"
         style={{ padding: `${padding}px` }}
@@ -117,18 +134,19 @@ export const schema = createSchema({
     {
       group: "Layout",
       inputs: [
-        {
-          type: "range",
-          name: "maxWidth",
-          label: "Max Width",
-          defaultValue: 480,
-          configs: {
-            min: 300,
-            max: 1200,
-            step: 20,
-            unit: "px",
+          {
+            type: "range",
+            name: "maxWidth",
+            label: "Max Width",
+            defaultValue: 480,
+            configs: {
+              min: 0,
+              max: 1200,
+              step: 20,
+              unit: "px",
+            },
+            helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
           },
-        },
         {
           type: "range",
           name: "padding",

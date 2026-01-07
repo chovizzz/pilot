@@ -4,6 +4,7 @@ import {
   type WeaverseImage,
 } from "@weaverse/hydrogen";
 import { forwardRef, useEffect, useRef, useState } from "react";
+import { Image } from "~/components/image";
 import { useAnimation } from "~/hooks/use-animation";
 
 interface PromotionButtonData {
@@ -64,27 +65,35 @@ export const PromotionButton = forwardRef<
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Extract image URLs from WeaverseImage objects or strings
-  const arrowIconUrl = arrowIcon
+  // Prepare image data for Image component
+  const arrowIconData: Partial<WeaverseImage> | undefined = arrowIcon
     ? typeof arrowIcon === "string"
-      ? arrowIcon
-      : arrowIcon.url
-    : null;
-  const leftIconUrl = leftIcon
+      ? { url: arrowIcon, altText: "Arrow icon" }
+      : arrowIcon
+    : undefined;
+  const leftIconData: Partial<WeaverseImage> | undefined = leftIcon
     ? typeof leftIcon === "string"
-      ? leftIcon
-      : leftIcon.url
-    : null;
-  const rightIconUrl = rightIcon
+      ? { url: leftIcon, altText: "Left icon" }
+      : leftIcon
+    : undefined;
+  const rightIconData: Partial<WeaverseImage> | undefined = rightIcon
     ? typeof rightIcon === "string"
-      ? rightIcon
-      : rightIcon.url
-    : null;
+      ? { url: rightIcon, altText: "Right icon" }
+      : rightIcon
+    : undefined;
 
   // Handle sticky behavior when scrolling out of viewport
   useEffect(() => {
     if (!enableSticky) {
       setIsSticky(false);
+      const wrapper = wrapperRef.current;
+      const contentRoot = document.querySelector('.weaverse-content-root') as HTMLElement;
+      if (wrapper) {
+        wrapper.style.minHeight = "";
+      }
+      if (contentRoot) {
+        contentRoot.style.paddingBottom = "";
+      }
       return;
     }
 
@@ -96,8 +105,26 @@ export const PromotionButton = forwardRef<
     const initialHeight = container.offsetHeight;
     wrapper.style.minHeight = `${initialHeight}px`;
 
+    // Get the weaverse-content-root element
+    const contentRoot = document.querySelector('.weaverse-content-root') as HTMLElement;
+    if (!contentRoot) return;
+
     let lastStickyState = false;
     let ticking = false;
+    let resizeObserver: ResizeObserver | null = null;
+
+    const updatePadding = (shouldBeSticky: boolean) => {
+      if (shouldBeSticky) {
+        // When sticky, add padding-bottom to weaverse-content-root to reserve space at the bottom
+        // This prevents the button from covering content when it sticks to the bottom
+        const containerHeight = container.offsetHeight;
+        const totalHeight = containerHeight + stickyOffset;
+        contentRoot.style.paddingBottom = `${totalHeight}px`;
+      } else {
+        // When not sticky, remove padding-bottom
+        contentRoot.style.paddingBottom = "";
+      }
+    };
 
     const handleScroll = () => {
       if (ticking) return;
@@ -112,6 +139,7 @@ export const PromotionButton = forwardRef<
         // Only update state if it changed to prevent unnecessary re-renders
         if (shouldBeSticky !== lastStickyState) {
           setIsSticky(shouldBeSticky);
+          updatePadding(shouldBeSticky);
           lastStickyState = shouldBeSticky;
         }
 
@@ -119,16 +147,30 @@ export const PromotionButton = forwardRef<
       });
     };
 
+    // Update padding on resize when sticky
+    resizeObserver = new ResizeObserver(() => {
+      if (lastStickyState) {
+        updatePadding(true);
+      }
+    });
+    resizeObserver.observe(container);
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll(); // Check initial state
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       if (wrapper) {
         wrapper.style.minHeight = "";
       }
+      if (contentRoot) {
+        contentRoot.style.paddingBottom = "";
+      }
     };
-  }, [enableSticky]);
+  }, [enableSticky, stickyOffset]);
 
   // Create shrink animation keyframes with configurable scale
   const shrinkKeyframes = `@keyframes btnshrink {
@@ -193,7 +235,7 @@ export const PromotionButton = forwardRef<
           }}
         >
           <div>{buttonText}</div>
-          {arrowIconUrl && (
+          {arrowIconData && (
             <div
               className="imgage-section-container"
               style={{
@@ -201,12 +243,14 @@ export const PromotionButton = forwardRef<
                 aspectRatio: "30 / 30",
               }}
             >
-              <img
-                src={arrowIconUrl}
+              <Image
+                data={arrowIconData}
                 alt=""
-                width="30"
-                height="30"
+                width={30}
+                height={30}
                 className="w-full h-full object-contain"
+                loading="lazy"
+                sizes="auto"
               />
             </div>
           )}
@@ -216,7 +260,7 @@ export const PromotionButton = forwardRef<
         <div className="flex items-center gap-2 mt-4 justify-center">
           {/* Left Text with Icon */}
           <div className="flex items-center gap-1 button7-bottom-left">
-            {leftIconUrl && (
+            {leftIconData && (
               <div
                 className="imgage-section-container left_icon"
                 style={{
@@ -224,12 +268,14 @@ export const PromotionButton = forwardRef<
                   aspectRatio: "42 / 48",
                 }}
               >
-                <img
-                  src={leftIconUrl}
+                <Image
+                  data={leftIconData}
                   alt=""
-                  width="42"
-                  height="48"
+                  width={42}
+                  height={48}
                   className="w-full h-full object-contain"
+                  loading="lazy"
+                  sizes="auto"
                 />
               </div>
             )}
@@ -245,7 +291,7 @@ export const PromotionButton = forwardRef<
 
           {/* Right Text with Icon */}
           <div className="flex items-center gap-1 button7-bottom-right">
-            {rightIconUrl && (
+            {rightIconData && (
               <div
                 className="imgage-section-container right_icon"
                 style={{
@@ -253,15 +299,17 @@ export const PromotionButton = forwardRef<
                   aspectRatio: "42 / 56",
                 }}
               >
-                <img
-                  src={rightIconUrl}
+                <Image
+                  data={rightIconData}
                   alt=""
-                  width="42"
-                  height="56"
+                  width={42}
+                  height={56}
                   className="w-full h-full object-contain"
                   style={{
                     animation: `spin ${iconRotateSpeed}s linear infinite`,
                   }}
+                  loading="lazy"
+                  sizes="auto"
                 />
               </div>
             )}
@@ -342,11 +390,12 @@ export const schema = createSchema({
           label: "Max Width",
           defaultValue: 480,
           configs: {
-            min: 300,
+            min: 0,
             max: 800,
             step: 10,
             unit: "px",
           },
+          helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
         },
         {
           type: "range",

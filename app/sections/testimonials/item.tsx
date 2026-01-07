@@ -4,6 +4,7 @@ import {
   type WeaverseImage,
 } from "@weaverse/hydrogen";
 import { forwardRef } from "react";
+import { Image } from "~/components/image";
 import { useAnimation } from "~/hooks/use-animation";
 
 interface TestimonialItemData {
@@ -77,17 +78,17 @@ export const TestimonialItem = forwardRef<HTMLDivElement, TestimonialItemProps>(
 
     const animation = useAnimation();
 
-    // Extract image URLs from WeaverseImage objects or strings
-    const authorImageUrl = authorImage
+    // Prepare image data for Image component
+    const authorImageData: Partial<WeaverseImage> | undefined = authorImage
       ? typeof authorImage === "string"
-        ? authorImage
-        : authorImage.url
-      : null;
-    const productImageUrl = productImage
+        ? { url: authorImage, altText: authorName || "Author" }
+        : authorImage
+      : undefined;
+    const productImageData: Partial<WeaverseImage> | undefined = productImage
       ? typeof productImage === "string"
-        ? productImage
-        : productImage.url
-      : null;
+        ? { url: productImage, altText: "Product" }
+        : productImage
+      : undefined;
 
     return (
       <div
@@ -122,7 +123,7 @@ export const TestimonialItem = forwardRef<HTMLDivElement, TestimonialItemProps>(
             )}
             {/* Author info */}
             <div className="flex items-center comment13-item-avatar">
-              {authorImageUrl && (
+              {authorImageData && (
                 <div
                   className="imgage-section-container rounded-full mr-2"
                   style={{
@@ -131,10 +132,12 @@ export const TestimonialItem = forwardRef<HTMLDivElement, TestimonialItemProps>(
                     aspectRatio: "100 / 100",
                   }}
                 >
-                  <img
-                    src={authorImageUrl}
+                  <Image
+                    data={authorImageData}
                     alt={authorName || ""}
                     className="rounded-full w-full h-full object-cover"
+                    loading="lazy"
+                    sizes="auto"
                   />
                 </div>
               )}
@@ -177,17 +180,19 @@ export const TestimonialItem = forwardRef<HTMLDivElement, TestimonialItemProps>(
             </div>
           </div>
           {/* Product image */}
-          {productImageUrl && (
+          {productImageData && (
             <div
               className="comment13-item-pic imgage-section-container"
               style={{
                 aspectRatio: "800 / 800",
               }}
             >
-              <img
-                src={productImageUrl}
+              <Image
+                data={productImageData}
                 alt=""
                 className="w-full h-full object-contain"
+                loading="lazy"
+                sizes="auto"
               />
             </div>
           )}

@@ -31,6 +31,23 @@ export const Testimonials = forwardRef<HTMLElement, TestimonialsProps>(
 
     const animation = useAnimation();
 
+    // Create responsive maxWidth style that only applies on lg (1024px) and above
+    // If maxWidth is 0 or falsy, don't apply max-width (unlimited)
+    const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
+      .testimonials-responsive {
+        width: 100%;
+      }
+      @media (min-width: 1024px) {
+        .testimonials-responsive {
+          max-width: ${maxWidth}px;
+        }
+      }
+    ` : `
+      .testimonials-responsive {
+        width: 100%;
+      }
+    `;
+
     return (
       <Section
         ref={ref}
@@ -39,12 +56,12 @@ export const Testimonials = forwardRef<HTMLElement, TestimonialsProps>(
         data-motion="fade-up"
         {...animation}
       >
-        <div className="w-full mx-auto leading-tight comment13-container" style={{ backgroundColor: bgColor }}>
+        <style>{responsiveMaxWidthStyle}</style>
+        <div className="w-full mx-auto leading-tight comment13-container testimonials-responsive" style={{ backgroundColor: bgColor }}>
           <div
             className="main-content mx-auto"
             style={{
               padding: `${padding}px`,
-              maxWidth: `${maxWidth}px`,
             }}
           >
             {heading && (
@@ -112,11 +129,12 @@ export const schema = createSchema({
           label: "Max Width",
           defaultValue: 500,
           configs: {
-            min: 300,
+            min: 0,
             max: 800,
             step: 10,
             unit: "px",
           },
+          helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
         },
         {
           type: "range",

@@ -93,7 +93,10 @@ export interface HeadingProps
   backgroundColor?: string;
   minSize?: number;
   maxSize?: number;
+  lineHeight?: number;
   animate?: boolean;
+  animationType?: "fade-up" | "zoom-in" | "slide-in";
+  animationDelay?: number;
 }
 
 function Heading(props: HeadingProps & Partial<HydrogenComponentProps>) {
@@ -111,8 +114,11 @@ function Heading(props: HeadingProps & Partial<HydrogenComponentProps>) {
     alignment,
     minSize,
     maxSize,
+    lineHeight,
     className,
     animate = true,
+    animationType = "fade-up",
+    animationDelay,
     ...rest
   } = props;
   let style: CSSProperties = { color, backgroundColor };
@@ -124,8 +130,14 @@ function Heading(props: HeadingProps & Partial<HydrogenComponentProps>) {
       "--max-size": maxSize,
     } as CSSProperties;
   }
+  if (lineHeight !== undefined) {
+    style.lineHeight = lineHeight;
+  }
   if (animate) {
-    rest["data-motion"] = "fade-up";
+    rest["data-motion"] = animationType;
+    if (animationDelay !== undefined) {
+      rest["data-delay"] = String(animationDelay);
+    }
   }
   return (
     <Tag
@@ -313,6 +325,54 @@ export const headingInputs: InspectorGroup["inputs"] = [
       ],
     },
     defaultValue: "center",
+  },
+  {
+    type: "range",
+    name: "lineHeight",
+    label: "Line height",
+    configs: {
+      min: 0.8,
+      max: 3,
+      step: 0.1,
+    },
+    defaultValue: undefined,
+    helpText: "Line height multiplier (e.g., 1.5 means 1.5x the font size). Leave empty to use default.",
+  },
+  {
+    type: "switch",
+    name: "animate",
+    label: "Enable Animation",
+    defaultValue: true,
+    helpText: "Enable entrance animation when element comes into view",
+  },
+  {
+    type: "select",
+    name: "animationType",
+    label: "Animation Type",
+    configs: {
+      options: [
+        { value: "fade-up", label: "Fade Up" },
+        { value: "zoom-in", label: "Zoom In" },
+        { value: "slide-in", label: "Slide In" },
+      ],
+    },
+    defaultValue: "fade-up",
+    condition: (data: HeadingProps) => data.animate !== false,
+    helpText: "Animation style for this heading",
+  },
+  {
+    type: "range",
+    name: "animationDelay",
+    label: "Animation Delay (seconds)",
+    configs: {
+      min: 0,
+      max: 2,
+      step: 0.1,
+      unit: "s",
+    },
+    defaultValue: undefined,
+    condition: (data: HeadingProps) => data.animate !== false,
+    helpText: "Delay before animation starts. Leave empty to use default sequential delay.",
   },
 ];
 

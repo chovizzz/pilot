@@ -10,11 +10,13 @@ interface PromotionGridProps
   extends VariantProps<typeof variants>,
     SectionProps {
   ref?: React.Ref<HTMLElement>;
+  maxWidth?: number;
 }
 
 const variants = cva("flex flex-col sm:grid", {
   variants: {
     gridSize: {
+      "1x1": "sm:grid-cols-1 sm:[&_.promotion-grid-item]:p-20",
       "2x2": "sm:grid-cols-2 sm:[&_.promotion-grid-item]:p-16",
       "3x3": "sm:grid-cols-3 sm:[&_.promotion-grid-item]:p-12",
       "4x4": "sm:grid-cols-4 sm:[&_.promotion-grid-item]:p-8",
@@ -45,15 +47,37 @@ const variants = cva("flex flex-col sm:grid", {
 });
 
 function PromotionGrid(props: PromotionGridProps) {
-  const { children, gridSize, gap, ref, ...rest } = props;
+  const { children, gridSize, gap, ref, maxWidth = 500, ...rest } = props;
+
+  // Create responsive maxWidth style that only applies on lg (1024px) and above
+  // If maxWidth is 0 or falsy, don't apply max-width (unlimited)
+  const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
+    .promotion-grid-responsive {
+      width: 100%;
+    }
+    @media (min-width: 1024px) {
+      .promotion-grid-responsive {
+        max-width: ${maxWidth}px;
+      }
+    }
+  ` : `
+    .promotion-grid-responsive {
+      width: 100%;
+    }
+  `;
+
   return (
-    <Section
-      ref={ref}
-      {...rest}
-      containerClassName={variants({ gridSize, gap })}
-    >
-      {children}
-    </Section>
+    <>
+      <style>{responsiveMaxWidthStyle}</style>
+      <Section
+        ref={ref}
+        {...rest}
+        className="promotion-grid-responsive mx-auto"
+        containerClassName={variants({ gridSize, gap })}
+      >
+        {children}
+      </Section>
+    </>
   );
 }
 
@@ -72,6 +96,7 @@ export const schema = createSchema({
           label: "Grid size",
           configs: {
             options: [
+              { value: "1x1", label: "1 Column" },
               { value: "2x2", label: "2x2" },
               { value: "3x3", label: "3x3" },
               { value: "4x4", label: "4x4" },
@@ -91,6 +116,19 @@ export const schema = createSchema({
           },
           defaultValue: 20,
         },
+        {
+          type: "range",
+          name: "maxWidth",
+          label: "Max Width",
+          defaultValue: 500,
+          configs: {
+            min: 0,
+            max: 1600,
+            step: 20,
+            unit: "px",
+          },
+          helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
+        },
       ],
     },
     { group: "Layout", inputs: layoutInputs },
@@ -101,6 +139,7 @@ export const schema = createSchema({
   presets: {
     gridSize: "2x2",
     gap: 20,
+    maxWidth: 500,
     children: [
       {
         type: "promotion-grid-item",

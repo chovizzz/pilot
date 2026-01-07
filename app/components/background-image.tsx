@@ -32,8 +32,8 @@ export type BackgroundImageProps = VariantProps<typeof variants> & {
   backgroundImage?: WeaverseImage | string;
 };
 
-export function BackgroundImage(props: BackgroundImageProps) {
-  const { backgroundImage, backgroundFit, backgroundPosition } = props;
+export function BackgroundImage(props: BackgroundImageProps & { loading?: "lazy" | "eager" }) {
+  const { backgroundImage, backgroundFit, backgroundPosition, loading = "lazy" } = props;
   if (backgroundImage) {
     const data =
       typeof backgroundImage === "string"
@@ -44,6 +44,7 @@ export function BackgroundImage(props: BackgroundImageProps) {
         className={variants({ backgroundFit, backgroundPosition })}
         data={data}
         sizes="auto"
+        loading={loading}
       />
     );
   }

@@ -6,6 +6,7 @@ import {
 } from "@weaverse/hydrogen";
 import { forwardRef } from "react";
 import { Section } from "~/components/section";
+import { Image } from "~/components/image";
 import { useAnimation } from "~/hooks/use-animation";
 import { PromotionBannerItem } from "./item";
 
@@ -21,6 +22,7 @@ interface PromotionBannerData {
   leftImageHeight?: number;
   imagePosition?: "left" | "right";
   containerHeight?: number;
+  maxWidth?: number;
 }
 
 type PromotionBannerProps = HydrogenComponentProps<PromotionBannerData>;
@@ -39,6 +41,7 @@ export const PromotionBanner = forwardRef<HTMLElement, PromotionBannerProps>(
       leftImageHeight = 80,
       imagePosition = "left",
       containerHeight = 38,
+      maxWidth = 500,
       ...rest
     } = props as PromotionBannerData & typeof props;
 
@@ -117,33 +120,56 @@ export const PromotionBanner = forwardRef<HTMLElement, PromotionBannerProps>(
       ? `${changeSlidesEvery * childInstances.length}s`
       : `${changeSlidesEvery * childInstances.length}s`;
     
-    // Extract image URL from WeaverseImage object or string
-    const imageUrl = leftImage 
-      ? (typeof leftImage === "string" ? leftImage : leftImage.url)
-      : null;
+    // Prepare image data for Image component
+    const leftImageData: Partial<WeaverseImage> | undefined = leftImage
+      ? typeof leftImage === "string"
+        ? { url: leftImage, altText: "Fixed image" }
+        : leftImage
+      : undefined;
     
-    const imageElement = imageUrl && (
+    const imageElement = leftImageData && (
       <div className="shrink-0">
-        <img
-          src={imageUrl}
+        <Image
+          data={leftImageData}
           alt=""
           className="object-contain"
           style={{
             width: `${leftImageWidth}px`,
             height: `${leftImageHeight}px`,
           }}
+          loading="lazy"
+          sizes="auto"
         />
       </div>
     );
+
+    // Create responsive maxWidth style that only applies on lg (1024px) and above
+    // If maxWidth is 0 or falsy, don't apply max-width (unlimited)
+    const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
+      .promotion-banner-responsive {
+        width: 100%;
+      }
+      @media (min-width: 1024px) {
+        .promotion-banner-responsive {
+          max-width: ${maxWidth}px;
+        }
+      }
+    ` : `
+      .promotion-banner-responsive {
+        width: 100%;
+      }
+    `;
 
     return (
       <Section
         ref={ref}
         {...rest}
+        className="promotion-banner-responsive mx-auto"
         style={{ backgroundColor: bgColor }}
         data-motion="fade-up"
         {...animation}
       >
+        <style>{responsiveMaxWidthStyle}</style>
         <div className="w-full overflow-hidden">
           {showType === "slick" ? (
             <div className="promotion-banner-slick flex items-center gap-2 p-[10px]">
@@ -376,6 +402,19 @@ export const schema = createSchema({
           },
           condition: (data: PromotionBannerData) => data.showType === "slick" && data.autoPlay === true && data.scrollMode === "slide" && (data.scrollDirection === "up" || data.scrollDirection === "down"),
         },
+        {
+          type: "range",
+          name: "maxWidth",
+          label: "Max Width",
+          defaultValue: 500,
+          configs: {
+            min: 0,
+            max: 1600,
+            step: 20,
+            unit: "px",
+          },
+          helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
+        },
       ],
     },
   ],
@@ -384,6 +423,7 @@ export const schema = createSchema({
     bgColor: "#E8E8E8",
     autoPlay: true,
     changeSlidesEvery: 6,
+    maxWidth: 500,
     children: [
       {
         type: "promotion-banner--item",

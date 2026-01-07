@@ -2,6 +2,7 @@ import { createSchema, type HydrogenComponentProps, type WeaverseImage } from "@
 import { forwardRef } from "react";
 import { Section, sectionSettings } from "~/components/section";
 import { useAnimation } from "~/hooks/use-animation";
+import { Image } from "~/components/image";
 
 interface ProductSpecificationsData {
   heading?: string;
@@ -33,10 +34,29 @@ export const ProductSpecifications = forwardRef<
   } = props as ProductSpecificationsData & typeof props;
   const animation = useAnimation();
 
-  // Extract image URL from WeaverseImage object or string
-  const imageUrl = productImage 
-    ? (typeof productImage === "string" ? productImage : productImage.url)
-    : null;
+  // Prepare image data for Image component
+  const imageData: Partial<WeaverseImage> | undefined = productImage
+    ? typeof productImage === "string"
+      ? { url: productImage, altText: "Product" }
+      : productImage
+    : undefined;
+
+  // Create responsive maxWidth style that only applies on lg (1024px) and above
+  // If maxWidth is 0 or falsy, don't apply max-width (unlimited)
+  const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
+    .product-specifications-responsive {
+      width: 100%;
+    }
+    @media (min-width: 1024px) {
+      .product-specifications-responsive {
+        max-width: ${maxWidth}px;
+      }
+    }
+  ` : `
+    .product-specifications-responsive {
+      width: 100%;
+    }
+  `;
 
   return (
     <Section
@@ -46,12 +66,12 @@ export const ProductSpecifications = forwardRef<
       data-motion="fade-up"
       {...animation}
     >
-      <div className="w-full mx-auto leading-tight" style={{ backgroundColor: bgColor }}>
+      <style>{responsiveMaxWidthStyle}</style>
+      <div className="w-full mx-auto leading-tight product-specifications-responsive" style={{ backgroundColor: bgColor }}>
         <div
           className="main-content mx-auto"
           style={{
             padding: 0,
-            maxWidth: `${maxWidth}px`,
           }}
         >
           {/* Specifications Box */}
@@ -77,7 +97,7 @@ export const ProductSpecifications = forwardRef<
           </div>
 
           {/* Product Image */}
-          {imageUrl && (
+          {imageData && (
             <a
               href={productImageLink || "#"}
               className="h-auto mx-auto block"
@@ -89,10 +109,12 @@ export const ProductSpecifications = forwardRef<
                   aspectRatio: "600 / 800",
                 }}
               >
-                <img
-                  src={imageUrl}
+                <Image
+                  data={imageData}
                   alt="Product"
                   className="w-full h-full object-contain"
+                  loading="lazy"
+                  sizes="auto"
                 />
               </div>
             </a>
@@ -143,11 +165,12 @@ export const schema = createSchema({
           label: "Max Width",
           defaultValue: 500,
           configs: {
-            min: 300,
+            min: 0,
             max: 800,
             step: 10,
             unit: "px",
           },
+          helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
         },
       ],
     },

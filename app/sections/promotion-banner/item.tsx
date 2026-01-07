@@ -4,6 +4,7 @@ import {
   type WeaverseImage,
 } from "@weaverse/hydrogen";
 import { forwardRef } from "react";
+import { Image } from "~/components/image";
 
 interface PromotionBannerItemData {
   title?: string;
@@ -36,13 +37,17 @@ export const PromotionBannerItem = forwardRef<
     descriptionSize = 12,
   } = props as PromotionBannerItemData & typeof props;
 
-  // Extract image URLs from WeaverseImage objects or strings
-  const leftIconUrl = leftIcon 
-    ? (typeof leftIcon === "string" ? leftIcon : leftIcon.url)
-    : null;
-  const starIconUrl = starIcon 
-    ? (typeof starIcon === "string" ? starIcon : starIcon.url)
-    : null;
+  // Prepare image data for Image component
+  const leftIconData: Partial<WeaverseImage> | undefined = leftIcon
+    ? typeof leftIcon === "string"
+      ? { url: leftIcon, altText: "Left icon" }
+      : leftIcon
+    : undefined;
+  const starIconData: Partial<WeaverseImage> | undefined = starIcon
+    ? typeof starIcon === "string"
+      ? { url: starIcon, altText: "Star icon" }
+      : starIcon
+    : undefined;
 
   return (
     <div
@@ -54,11 +59,13 @@ export const PromotionBannerItem = forwardRef<
         minHeight: "fit-content",
       }}
     >
-      {leftIconUrl && (
-        <img
-          src={leftIconUrl}
+      {leftIconData && (
+        <Image
+          data={leftIconData}
           alt=""
           className="w-8 h-8 object-contain shrink-0"
+          loading="lazy"
+          sizes="auto"
         />
       )}
       <div className="flex-1 flex flex-col gap-0.5">
@@ -85,11 +92,13 @@ export const PromotionBannerItem = forwardRef<
           />
         )}
       </div>
-      {showStar && starIconUrl && (
-        <img
-          src={starIconUrl}
+      {showStar && starIconData && (
+        <Image
+          data={starIconData}
           alt=""
           className="w-6 h-6 object-contain shrink-0"
+          loading="lazy"
+          sizes="auto"
         />
       )}
     </div>

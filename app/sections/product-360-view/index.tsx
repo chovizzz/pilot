@@ -2,6 +2,7 @@ import { createSchema, type HydrogenComponentProps, type WeaverseImage, useChild
 import { forwardRef } from "react";
 import { Autoplay, EffectFade, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { Image } from "~/components/image";
 import { useAnimation } from "~/hooks/use-animation";
 import { Product360ViewItem } from "./item";
 
@@ -51,25 +52,42 @@ export const Product360View = forwardRef<
   const animation = useAnimation();
   const childInstances = useChildInstances();
 
-  // Extract overlay image URL from WeaverseImage object or string
-  const overlayImageUrl = overlayImage
+  // Prepare image data for Image component
+  const overlayImageData: Partial<WeaverseImage> | undefined = overlayImage
     ? typeof overlayImage === "string"
-      ? overlayImage
-      : overlayImage.url
-    : null;
+      ? { url: overlayImage, altText: "Overlay image" }
+      : overlayImage
+    : undefined;
+
+  // Create responsive maxWidth style that only applies on lg (1024px) and above
+  // If maxWidth is 0 or falsy, don't apply max-width (unlimited)
+  const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
+    .gallery4-container-responsive {
+      width: 100%;
+    }
+    @media (min-width: 1024px) {
+      .gallery4-container-responsive {
+        max-width: ${maxWidth}px;
+      }
+    }
+  ` : `
+    .gallery4-container-responsive {
+      width: 100%;
+    }
+  `;
 
   return (
     <div
       ref={ref}
       {...rest}
-      className="w-full mx-auto leading-tight gallery4-container"
+      className="w-full mx-auto leading-tight gallery4-container gallery4-container-responsive"
       style={{
         backgroundColor: bgColor,
-        maxWidth: `${maxWidth}px`,
       }}
       data-motion="fade-up"
       {...animation}
     >
+      <style>{responsiveMaxWidthStyle}</style>
       <div
         className="main-content max-w-7xl mx-auto"
         style={{ padding: `${padding}px` }}
@@ -220,7 +238,7 @@ export const Product360View = forwardRef<
               </SwiperSlide>
             ))}
           </Swiper>
-          {overlayImageUrl && (
+          {overlayImageData && (
             <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full z-10 pointer-events-none">
               <div
                 className="imgage-section-container mx-auto"
@@ -228,10 +246,12 @@ export const Product360View = forwardRef<
                   aspectRatio: "651 / 155",
                 }}
               >
-                <img
-                  src={overlayImageUrl}
+                <Image
+                  data={overlayImageData}
                   alt=""
                   className="w-full h-full object-contain"
+                  loading="lazy"
+                  sizes="auto"
                 />
               </div>
             </div>
@@ -277,18 +297,19 @@ export const schema = createSchema({
     {
       group: "Layout",
       inputs: [
-        {
-          type: "range",
-          name: "maxWidth",
-          label: "Max Width",
-          defaultValue: 480,
-          configs: {
-            min: 300,
-            max: 1200,
-            step: 20,
-            unit: "px",
+          {
+            type: "range",
+            name: "maxWidth",
+            label: "Max Width",
+            defaultValue: 480,
+            configs: {
+              min: 0,
+              max: 1200,
+              step: 20,
+              unit: "px",
+            },
+            helpText: "Maximum width on large screens (1024px and above). Set to 0 for unlimited width.",
           },
-        },
         {
           type: "range",
           name: "padding",

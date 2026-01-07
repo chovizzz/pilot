@@ -92,6 +92,12 @@ import * as BackToTop from "~/sections/back-to-top";
 import * as Copyright from "~/sections/copyright";
 import * as Product360View from "~/sections/product-360-view";
 import * as Product360ViewItem from "~/sections/product-360-view/item";
+import * as SatisfactionGuarantee from "~/sections/satisfaction-guarantee";
+import * as SatisfactionGuaranteeFeature from "~/sections/satisfaction-guarantee/feature";
+import * as SatisfactionGuaranteeReview from "~/sections/satisfaction-guarantee/review-item";
+import * as StickyNavigation from "~/sections/sticky-navigation";
+import * as ProductInfo from "~/sections/product-info";
+import * as ProductInfoItem from "~/sections/product-info/item";
 
 export const components: HydrogenComponent[] = [
   SubHeading,
@@ -192,4 +198,10 @@ export const components: HydrogenComponent[] = [
   Copyright,
   Product360View,
   Product360ViewItem,
-];
+    SatisfactionGuarantee,
+    SatisfactionGuaranteeFeature,
+    SatisfactionGuaranteeReview,
+    StickyNavigation,
+    ProductInfo,
+    ProductInfoItem,
+  ];
