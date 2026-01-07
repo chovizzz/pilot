@@ -90,6 +90,8 @@ import * as ComparisonImages from "~/sections/comparison-images";
 import * as ComparisonImagesItem from "~/sections/comparison-images/item";
 import * as BackToTop from "~/sections/back-to-top";
 import * as Copyright from "~/sections/copyright";
+import * as Product360View from "~/sections/product-360-view";
+import * as Product360ViewItem from "~/sections/product-360-view/item";
 
 export const components: HydrogenComponent[] = [
   SubHeading,
@@ -188,4 +190,6 @@ export const components: HydrogenComponent[] = [
   PromotionButton,
   BackToTop,
   Copyright,
+  Product360View,
+  Product360ViewItem,
 ];
