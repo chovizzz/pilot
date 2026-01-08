@@ -30,21 +30,38 @@ const variants = cva("absolute inset-0 z-[-1] h-full w-full", {
 
 export type BackgroundImageProps = VariantProps<typeof variants> & {
   backgroundImage?: WeaverseImage | string;
+  width?: number;
 };
 
 export function BackgroundImage(props: BackgroundImageProps & { loading?: "lazy" | "eager" }) {
-  const { backgroundImage, backgroundFit, backgroundPosition, loading = "lazy" } = props;
+  const { backgroundImage, backgroundFit, backgroundPosition, loading = "lazy", width } = props;
   if (backgroundImage) {
     const data =
       typeof backgroundImage === "string"
         ? { url: backgroundImage, altText: "Section background" }
         : backgroundImage;
+    
+    // If width is provided, use it to generate responsive sizes
+    // Otherwise, use default responsive sizes for full-width backgrounds
+    let sizes: string;
+    if (width && width > 0) {
+      // Calculate responsive sizes based on the provided width
+      // For high-DPI displays, browsers will automatically select 2x resolution
+      sizes = `(min-width: ${width}px) ${width}px, 100vw`;
+    } else {
+      // Default responsive sizes for full-width backgrounds
+      sizes = "(min-width: 1920px) 1920px, (min-width: 1280px) 1280px, (min-width: 768px) 768px, 100vw";
+    }
+    
+    // If width is provided, pass it to Image component to generate appropriate srcset
+    // Otherwise, let Hydrogen Image component generate srcset based on sizes and original dimensions
     return (
       <Image
         className={variants({ backgroundFit, backgroundPosition })}
         data={data}
-        sizes="auto"
+        sizes={sizes}
         loading={loading}
+        {...(width && width > 0 ? { width } : {})}
       />
     );
   }

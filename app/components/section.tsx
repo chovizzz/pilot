@@ -16,6 +16,7 @@ import { OverlayAndBackground } from "./overlay-and-background";
 export type BackgroundProps = BackgroundImageProps & {
   backgroundFor: "section" | "content";
   backgroundColor: string;
+  backgroundImageWidth?: number;
 };
 
 export interface SectionProps<T = any>
@@ -92,6 +93,7 @@ export function Section(props: SectionProps) {
     backgroundImage,
     backgroundFit,
     backgroundPosition,
+    backgroundImageWidth,
     enableOverlay,
     overlayColor,
     overlayColorHover,
@@ -125,7 +127,7 @@ export function Section(props: SectionProps) {
           "rounded-(--section-radius) bg-(--section-bg-color)",
       )}
     >
-      {!isBgForContent && <OverlayAndBackground {...props} loading={loading} />}
+      {!isBgForContent && <OverlayAndBackground {...props} width={backgroundImageWidth} loading={loading} />}
       <div
         className={cn(
           variants({ gap, width, verticalPadding, overflow }),
@@ -137,7 +139,7 @@ export function Section(props: SectionProps) {
           containerClassName,
         )}
       >
-        {isBgForContent && <OverlayAndBackground {...props} loading={loading} />}
+        {isBgForContent && <OverlayAndBackground {...props} width={backgroundImageWidth} loading={loading} />}
         {children}
       </div>
     </Component>

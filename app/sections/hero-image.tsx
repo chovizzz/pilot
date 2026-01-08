@@ -260,6 +260,20 @@ export const schema = createSchema({
           (inp) =>
             inp.name !== "backgroundFor" && inp.name !== "backgroundColor",
         ),
+        {
+          type: "range",
+          name: "backgroundImageWidth",
+          label: "Background Image Width",
+          defaultValue: 0,
+          configs: {
+            min: 0,
+            max: 3840,
+            step: 100,
+            unit: "px",
+          },
+          condition: (data: HeroImageProps & SectionProps) => Boolean(data.backgroundImage),
+          helpText: "Specify the width for the background image. This helps the browser load the appropriate resolution. Set to 0 to use automatic responsive sizing based on viewport.",
+        },
       ],
     },
     { group: "Overlay", inputs: overlayInputs },

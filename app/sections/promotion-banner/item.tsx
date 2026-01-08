@@ -16,6 +16,7 @@ interface PromotionBannerItemData {
   descriptionColor?: string;
   titleSize?: number;
   descriptionSize?: number;
+  textAlign?: "left" | "center" | "right";
 }
 
 type PromotionBannerItemProps =
@@ -35,6 +36,7 @@ export const PromotionBannerItem = forwardRef<
     descriptionColor = "#000000",
     titleSize = 14,
     descriptionSize = 12,
+    textAlign = "left",
   } = props as PromotionBannerItemData & typeof props;
 
   // Prepare image data for Image component
@@ -68,7 +70,10 @@ export const PromotionBannerItem = forwardRef<
           sizes="auto"
         />
       )}
-      <div className="flex-1 flex flex-col gap-0.5">
+      <div
+        className="flex-1 flex flex-col gap-0.5"
+        style={{ textAlign }}
+      >
         {title && (
           <div
             style={{
@@ -189,6 +194,19 @@ export const schema = createSchema({
             max: 16,
             step: 1,
             unit: "px",
+          },
+        },
+        {
+          type: "select",
+          name: "textAlign",
+          label: "Text Alignment",
+          defaultValue: "left",
+          configs: {
+            options: [
+              { value: "left", label: "Left" },
+              { value: "center", label: "Center" },
+              { value: "right", label: "Right" },
+            ],
           },
         },
       ],

@@ -62,6 +62,7 @@ import * as SlideShowSlide from "~/sections/slideshow/slide";
 import * as Spacer from "~/sections/spacer";
 import * as Testimonial from "~/sections/testimonials";
 import * as TestimonialItem from "~/sections/testimonials/item";
+import * as TestimonialItemV2 from "~/sections/testimonials/item-v2";
 import * as TestimonialItems from "~/sections/testimonials/items";
 import * as VideoEmbed from "~/sections/video-embed";
 import * as VideoEmbedItem from "~/sections/video-embed/video";
@@ -98,6 +99,19 @@ import * as SatisfactionGuaranteeReview from "~/sections/satisfaction-guarantee/
 import * as StickyNavigation from "~/sections/sticky-navigation";
 import * as ProductInfo from "~/sections/product-info";
 import * as ProductInfoItem from "~/sections/product-info/item";
+import * as Checkout from "~/sections/checkout";
+import * as CheckoutLeftBox from "~/sections/checkout/left-box";
+import * as CheckoutRightBox from "~/sections/checkout/right-box";
+import * as CheckoutProductItem from "~/sections/checkout/product-item";
+import * as CheckoutOrderSummary from "~/sections/checkout/order-summary";
+import * as CheckoutShippingProtection from "~/sections/checkout/shipping-protection";
+import * as CheckoutPaymentMethods from "~/sections/checkout/payment-methods";
+import * as CheckoutPaymentMethodItem from "~/sections/checkout/payment-method-item";
+import * as CheckoutPaymentSecurity from "~/sections/checkout/payment-security";
+import * as CheckoutSecurityLogoItem from "~/sections/checkout/security-logo-item";
+import * as CheckoutOtherPaymentMethods from "~/sections/checkout/other-payment-methods";
+import * as CheckoutPaymentLogoItem from "~/sections/checkout/payment-logo-item";
+import * as CheckoutMoneyBackGuarantee from "~/sections/checkout/money-back-guarantee";
 
 export const components: HydrogenComponent[] = [
   SubHeading,
@@ -140,6 +154,7 @@ export const components: HydrogenComponent[] = [
   Testimonial,
   TestimonialItems,
   TestimonialItem,
+  TestimonialItemV2,
   ImageGallery,
   ImageGalleryItems,
   ImageGalleryItem,
@@ -204,4 +219,17 @@ export const components: HydrogenComponent[] = [
     StickyNavigation,
     ProductInfo,
     ProductInfoItem,
+    Checkout,
+    CheckoutLeftBox,
+    CheckoutRightBox,
+    CheckoutProductItem,
+    CheckoutOrderSummary,
+    CheckoutShippingProtection,
+    CheckoutPaymentMethods,
+    CheckoutPaymentMethodItem,
+    CheckoutPaymentSecurity,
+    CheckoutSecurityLogoItem,
+    CheckoutOtherPaymentMethods,
+    CheckoutPaymentLogoItem,
+    CheckoutMoneyBackGuarantee,
   ];
