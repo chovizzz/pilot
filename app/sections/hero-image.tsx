@@ -203,8 +203,8 @@ export const schema = createSchema({
         },
         {
           type: "position",
-          name: "contentPosition",
           label: "Content position",
+          name: "contentPosition",
           defaultValue: "center center",
         },
         {
@@ -256,10 +256,32 @@ export const schema = createSchema({
     {
       group: "Background",
       inputs: [
-        ...backgroundInputs.filter(
-          (inp) =>
-            inp.name !== "backgroundFor" && inp.name !== "backgroundColor",
-        ),
+        {
+          type: "image",
+          name: "backgroundImage",
+          label: "Background image",
+        },
+        {
+          type: "select",
+          name: "backgroundFit",
+          label: "Background fit",
+          configs: {
+            options: [
+              { value: "fill", label: "Fill" },
+              { value: "cover", label: "Cover" },
+              { value: "contain", label: "Contain" },
+            ],
+          },
+          defaultValue: "cover",
+          condition: (data: any) => Boolean(data.backgroundImage),
+        },
+        {
+          type: "position",
+          label: "Background position",
+          name: "backgroundPosition",
+          defaultValue: "center center",
+          condition: (data: any) => Boolean(data.backgroundImage),
+        },
         {
           type: "range",
           name: "backgroundImageWidth",
@@ -271,7 +293,7 @@ export const schema = createSchema({
             step: 100,
             unit: "px",
           },
-          condition: (data: HeroImageProps & SectionProps) => Boolean(data.backgroundImage),
+          condition: (data: any) => Boolean(data.backgroundImage),
           helpText: "Specify the width for the background image. This helps the browser load the appropriate resolution. Set to 0 to use automatic responsive sizing based on viewport.",
         },
       ],
