@@ -120,12 +120,6 @@ export const schema = createSchema({
       group: "Layout",
       inputs: [
         {
-          type: "text",
-          name: "id",
-          label: "Section ID",
-          helpText: "Set a unique ID for anchor links (e.g., 'product-info'). Leave empty to auto-generate.",
-        },
-        {
           type: "range",
           name: "maxWidth",
           label: "Max Width",

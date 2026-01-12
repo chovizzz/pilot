@@ -327,24 +327,55 @@ function StickyNavigationDrawerContent(props: StickyNavigationDrawerProps) {
 
         {/* Menu Items */}
         <div className="space-y-8 overflow-hidden px-8 relative z-3">
-          {menuItems.map((item, index) => (
-            <Link
-              key={index}
-              to={item.link || "#"}
-              className={`flex items-center gap-3 font-bold sticky-nav-menu-item cursor-pointer ${
-                isOpen ? "open" : "closed"
-              }`}
-              style={{
-                color: menuItemColor,
-                fontSize: `${menuItemSize}px`,
-                transitionDelay: `${index * 0.1}s`,
-              }}
-              onClick={onClose}
-            >
-              <div>{item.label}</div>
-              <ArrowIcon />
-            </Link>
-          ))}
+          {menuItems.map((item, index) => {
+            const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+              const link = item.link || "#";
+              // Check if it's an anchor link (starts with #)
+              if (link.startsWith("#") && link.length > 1) {
+                e.preventDefault();
+                const targetId = link.substring(1); // Remove the # symbol
+                const targetElement = document.getElementById(targetId);
+                
+                if (targetElement) {
+                  // Calculate offset for sticky navigation (header + padding)
+                  const stickyNavHeight = 100; // Approximate height of sticky nav
+                  
+                  // Get the element's position relative to viewport
+                  const elementTop = targetElement.getBoundingClientRect().top;
+                  // Calculate scroll position with offset
+                  const offsetPosition = elementTop + window.pageYOffset - stickyNavHeight;
+                  
+                  // Scroll to position with offset
+                  window.scrollTo({
+                    top: offsetPosition,
+                    behavior: "smooth",
+                  });
+                }
+              }
+              
+              // Close drawer after navigation
+              onClose();
+            };
+            
+            return (
+              <Link
+                key={index}
+                to={item.link || "#"}
+                className={`flex items-center gap-3 font-bold sticky-nav-menu-item cursor-pointer ${
+                  isOpen ? "open" : "closed"
+                }`}
+                style={{
+                  color: menuItemColor,
+                  fontSize: `${menuItemSize}px`,
+                  transitionDelay: `${index * 0.1}s`,
+                }}
+                onClick={handleClick}
+              >
+                <div>{item.label}</div>
+                <ArrowIcon />
+              </Link>
+            );
+          })}
         </div>
 
         {/* Menu Images */}

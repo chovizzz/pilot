@@ -440,7 +440,7 @@ export const schema = createSchema({
       inputs: [
         {
           type: "text",
-          name: "id",
+          name: "nodeId",
           label: "Section ID",
           helpText: "Set a unique ID for anchor links (e.g., 'satisfaction-guarantee'). Leave empty to auto-generate.",
         },

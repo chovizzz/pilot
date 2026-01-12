@@ -10,7 +10,7 @@ import { cva } from "class-variance-authority";
 import { clsx } from "clsx";
 
 interface TestimonialItemV2Data {
-  id?: string;
+  nodeId?: string;
   content?: string;
   authorName?: string;
   productImage?: WeaverseImage | string;
@@ -88,7 +88,7 @@ export const TestimonialItemV2 = forwardRef<
   TestimonialItemV2Props
 >((props, ref) => {
   const {
-    id,
+    nodeId,
     content,
     authorName,
     productImage,
@@ -129,8 +129,8 @@ export const TestimonialItemV2 = forwardRef<
 
   const isHorizontal = layout === "horizontal";
   const textRatio = 100 - imageRatio;
-  // Use provided id or generate a fallback for CSS targeting
-  const itemId = id || `testimonial-v2-${Math.random().toString(36).substr(2, 9)}`;
+  // Use provided nodeId or generate a fallback ID for CSS targeting
+  const itemId = nodeId || `testimonial-v2-${Math.random().toString(36).substr(2, 9)}`;
 
   return (
     <>
@@ -151,7 +151,7 @@ export const TestimonialItemV2 = forwardRef<
       )}
       <div
         ref={ref}
-        id={id || itemId}
+        id={itemId}
         {...rest}
         className={clsx(
           "flex border py-2 px-4 rounded-md",
@@ -300,7 +300,7 @@ export const schema = createSchema({
       inputs: [
         {
           type: "text",
-          name: "id",
+          name: "nodeId",
           label: "Element ID",
           helpText: "Set a unique ID for anchor links (e.g., 'testimonial-1'). Leave empty to auto-generate.",
         },

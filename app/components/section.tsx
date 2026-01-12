@@ -32,6 +32,7 @@ export interface SectionProps<T = any>
   children?: React.ReactNode;
   loading?: "lazy" | "eager";
   backgroundImageWidth?: number;
+  nodeId?: string; // Custom ID for anchor links (to avoid conflict with data-wv-id)
 }
 
 const variants = cva("relative", {
@@ -104,7 +105,7 @@ export function Section(props: SectionProps) {
     containerClassName,
     loading = "lazy",
     style = {},
-    id,
+    nodeId,
     ...rest
   } = props;
 
@@ -117,12 +118,11 @@ export function Section(props: SectionProps) {
   const isBgForContent = backgroundFor === "content";
   const hasBackground = backgroundColor || backgroundImage || borderRadius > 0;
 
-  // Extract id from rest to avoid conflicts, prioritize explicit id prop
-  // User-configured id should be in rest (from schema data), not in the top-level id prop
-  const restWithId = rest as typeof rest & { id?: string };
-  const { ['data-wv-id']: restId, ...restWithoutId } = restWithId;
-  // Use restId (from schema) if explicit id is not provided
-  const finalId = id || restId;
+  // Extract nodeId from rest to avoid conflicts with data-wv-id
+  const restWithNodeId = rest as typeof rest & { nodeId?: string };
+  const { nodeId: restNodeId, ...restWithoutNodeId } = restWithNodeId;
+  // Use nodeId from props or rest (from schema data)
+  const finalId = nodeId || restNodeId;
   
   // Only set id if it has a value (not undefined or empty string)
   const idProps = finalId ? { id: finalId } : {};
@@ -131,7 +131,7 @@ export function Section(props: SectionProps) {
     <Component
       ref={ref}
       {...idProps}
-      {...restWithoutId}
+      {...restWithoutNodeId}
       style={style}
       className={cn(
         variants({ padding: width, overflow, className }),
@@ -162,7 +162,7 @@ export function Section(props: SectionProps) {
 export const layoutInputs: InspectorGroup["inputs"] = [
   {
     type: "text",
-    name: "id",
+    name: "nodeId",
     label: "Section ID",
     helpText: "Set a unique ID for anchor links (e.g., 'hero-section'). Leave empty to auto-generate.",
   },

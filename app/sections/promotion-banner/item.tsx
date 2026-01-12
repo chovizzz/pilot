@@ -7,7 +7,7 @@ import { forwardRef } from "react";
 import { Image } from "~/components/image";
 
 interface PromotionBannerItemData {
-  id?: string;
+  nodeId?: string;
   title?: string;
   description?: string;
   showStar?: boolean;
@@ -28,7 +28,7 @@ export const PromotionBannerItem = forwardRef<
   PromotionBannerItemProps
 >((props, ref) => {
   const {
-    id,
+    nodeId,
     title,
     description,
     showStar = false,
@@ -56,7 +56,7 @@ export const PromotionBannerItem = forwardRef<
   return (
     <div
       ref={ref}
-      id={id}
+      id={nodeId}
       className="shrink-0 flex items-center gap-2"
       style={{ 
         minWidth: "fit-content",
@@ -126,7 +126,7 @@ export const schema = createSchema({
       inputs: [
         {
           type: "text",
-          name: "id",
+          name: "nodeId",
           label: "Element ID",
           helpText: "Set a unique ID for anchor links (e.g., 'promo-banner-1'). Leave empty to auto-generate.",
         },
