@@ -438,10 +438,16 @@ export const schema = createSchema({
     {
       group: "Layout",
       inputs: [
-              {
-                type: "range",
-                name: "maxWidth",
-                label: "Max Width",
+        {
+          type: "text",
+          name: "id",
+          label: "Section ID",
+          helpText: "Set a unique ID for anchor links (e.g., 'satisfaction-guarantee'). Leave empty to auto-generate.",
+        },
+        {
+          type: "range",
+          name: "maxWidth",
+          label: "Max Width",
                 defaultValue: 480,
                 configs: {
                   min: 0,

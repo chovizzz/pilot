@@ -18,12 +18,21 @@ interface CheckoutContextType {
   updateProductQuantity: (id: string, quantity: number) => void;
   getTotalPrice: () => { amount: string; currencyCode: string } | null;
   hasSelectedProducts: boolean;
+  shippingPrice: { amount: string; currencyCode: string } | null;
+  setShippingPrice: (price: { amount: string; currencyCode: string } | null) => void;
+  insurancePrice: { amount: string; currencyCode: string } | null;
+  setInsurancePrice: (price: { amount: string; currencyCode: string } | null) => void;
+  isInsuranceSelected: boolean;
+  setIsInsuranceSelected: (selected: boolean) => void;
 }
 
 const CheckoutContext = createContext<CheckoutContextType | undefined>(undefined);
 
 export function CheckoutProvider({ children }: { children: ReactNode }) {
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [shippingPrice, setShippingPrice] = useState<{ amount: string; currencyCode: string } | null>(null);
+  const [insurancePrice, setInsurancePrice] = useState<{ amount: string; currencyCode: string } | null>(null);
+  const [isInsuranceSelected, setIsInsuranceSelected] = useState<boolean>(false);
 
   const addProduct = useCallback((product: SelectedProduct) => {
     setSelectedProducts((prev) => {
@@ -64,18 +73,27 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
         : "USD"
       : "USD";
 
-    const total = selectedProducts.reduce((sum, product) => {
+    // Calculate product total
+    const productTotal = selectedProducts.reduce((sum, product) => {
       const price = typeof product.price === "object"
         ? parseFloat(product.price.amount)
         : parseFloat(String(product.price).replace(/[^0-9.-]+/g, "")) || 0;
       return sum + price * product.quantity;
     }, 0);
 
+    // Add shipping price
+    const shippingAmount = shippingPrice ? parseFloat(shippingPrice.amount) : 0;
+
+    // Add insurance price if selected
+    const insuranceAmount = (isInsuranceSelected && insurancePrice) ? parseFloat(insurancePrice.amount) : 0;
+
+    const total = productTotal + shippingAmount + insuranceAmount;
+
     return {
       amount: total.toFixed(2),
       currencyCode,
     };
-  }, [selectedProducts, selectedProductsKey]);
+  }, [selectedProducts, selectedProductsKey, shippingPrice, insurancePrice, isInsuranceSelected]);
 
   return (
     <CheckoutContext.Provider
@@ -86,6 +104,12 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
         updateProductQuantity,
         getTotalPrice,
         hasSelectedProducts: selectedProducts.length > 0,
+        shippingPrice,
+        setShippingPrice,
+        insurancePrice,
+        setInsurancePrice,
+        isInsuranceSelected,
+        setIsInsuranceSelected,
       }}
     >
       {children}

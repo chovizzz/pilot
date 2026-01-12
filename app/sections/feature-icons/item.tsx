@@ -4,6 +4,7 @@ import { useAnimation } from "~/hooks/use-animation";
 import { Image } from "~/components/image";
 
 interface FeatureIconsItemData {
+  id?: string;
   icon?: WeaverseImage | string;
   title?: string;
   description?: string;
@@ -23,6 +24,7 @@ export const FeatureIconsItem = forwardRef<
   FeatureIconsItemProps
 >((props, ref) => {
   const {
+    id,
     icon,
     title,
     description,
@@ -48,6 +50,7 @@ export const FeatureIconsItem = forwardRef<
   return (
     <div
       ref={ref}
+      id={id}
       className={`flex ${isHorizontal ? "flex-row items-center" : "flex-col items-center"} ${isHorizontal ? "text-left" : "text-center"} px-3 py-4 rounded-lg gap-4`}
       style={{
         backgroundColor: bgColor,
@@ -107,6 +110,17 @@ export const schema = createSchema({
   type: "feature-icons--item",
   title: "Feature Icon Item",
   settings: [
+    {
+      group: "Layout",
+      inputs: [
+        {
+          type: "text",
+          name: "id",
+          label: "Element ID",
+          helpText: "Set a unique ID for anchor links (e.g., 'feature-1'). Leave empty to auto-generate.",
+        },
+      ],
+    },
     {
       group: "Content",
       inputs: [

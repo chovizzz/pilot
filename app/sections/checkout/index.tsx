@@ -116,6 +116,12 @@ export const schema = createSchema({
       group: "Layout",
       inputs: [
         {
+          type: "text",
+          name: "id",
+          label: "Section ID",
+          helpText: "Set a unique ID for anchor links (e.g., 'checkout-section'). Leave empty to auto-generate.",
+        },
+        {
           type: "select",
           name: "layout",
           label: "Layout Direction",

@@ -1,5 +1,6 @@
 import { createSchema, type HydrogenComponentProps } from "@weaverse/hydrogen";
-import { forwardRef, useState } from "react";
+import { forwardRef, useState, useEffect, useMemo } from "react";
+import { useCheckout } from "./checkout-context";
 
 interface CheckoutShippingProtectionData {
   label?: string;
@@ -23,7 +24,38 @@ export const CheckoutShippingProtection = forwardRef<
     ...rest
   } = props as CheckoutShippingProtectionData & typeof props;
 
+  const { setInsurancePrice, setIsInsuranceSelected } = useCheckout();
   const [isChecked, setIsChecked] = useState(checked);
+
+  // Parse price from props and sync to context
+  const parsedPrice = useMemo(() => {
+    if (price) {
+      // Parse price string like "$1.99" to { amount: "1.99", currencyCode: "USD" }
+      const priceMatch = price.match(/\$?([\d.]+)/);
+      if (priceMatch) {
+        const amount = priceMatch[1];
+        const currencyCode = price.includes("$") ? "USD" : "USD"; // Default to USD, can be enhanced
+        return { amount, currencyCode };
+      }
+    }
+    return null;
+  }, [price]);
+
+  // Sync insurance price to context when price changes
+  useEffect(() => {
+    if (parsedPrice) {
+      setInsurancePrice(parsedPrice);
+    }
+  }, [parsedPrice, setInsurancePrice]);
+
+  // Sync selection state to context
+  useEffect(() => {
+    setIsInsuranceSelected(isChecked);
+  }, [isChecked, setIsInsuranceSelected]);
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsChecked(e.target.checked);
+  };
 
   return (
     <div ref={ref} {...rest} className="freightInsurance-content">
@@ -32,7 +64,7 @@ export const CheckoutShippingProtection = forwardRef<
           type="checkbox"
           id="shippingInsurance"
           checked={isChecked}
-          onChange={(e) => setIsChecked(e.target.checked)}
+          onChange={handleCheckboxChange}
           className="w-4 h-4 text-green-700 border border-gray-300 cursor-pointer shrink-0"
         />
         <div className="flex w-full betweenbox advanceMethodName-line cursor-pointer items-center">

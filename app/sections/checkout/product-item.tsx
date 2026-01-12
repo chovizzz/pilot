@@ -7,11 +7,12 @@ import {
 } from "@weaverse/hydrogen";
 import { Money } from "@shopify/hydrogen";
 import { forwardRef, useState, useEffect, useId, useMemo } from "react";
-import type { ProductQuery } from "storefront-api.generated";
+import type { ProductQuery, ProductVariantFragment } from "storefront-api.generated";
 import { Image } from "~/components/image";
 import { PRODUCT_QUERY } from "~/graphql/queries";
 import { useAnimation } from "~/hooks/use-animation";
 import { useCheckout } from "./checkout-context";
+import { VariantSelector } from "~/components/product/variant-selector";
 
 interface CheckoutProductItemData {
   product?: WeaverseProduct;
@@ -30,6 +31,7 @@ interface CheckoutProductItemData {
   variantTextColor?: string;
   salesPriceColor?: string;
   marketPriceColor?: string;
+  defaultVariantOptions?: string; // JSON string of selectedOptions: [{name: "Color", value: "Red"}, {name: "Size", value: "Large"}]
 }
 
 type CheckoutProductItemLoaderData = {
@@ -77,8 +79,21 @@ export const CheckoutProductItem = forwardRef<
   // Get product data from loader (Shopify product) or manual input
   const shopifyProduct = loaderData?.product;
   
-  // If product is associated, use product data; otherwise use manual input
-  const variant = shopifyProduct?.selectedOrFirstAvailableVariant;
+  // State for selected variant - initialize with loader's selected variant (from defaultVariantOptions) or first available variant
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariantFragment | null>(
+    shopifyProduct?.selectedOrFirstAvailableVariant || null
+  );
+  
+  // Update selected variant when product changes (use loader's selected variant if configured)
+  useEffect(() => {
+    if (shopifyProduct?.selectedOrFirstAvailableVariant) {
+      // Use the variant returned by loader (which respects defaultVariantOptions if configured)
+      setSelectedVariant(shopifyProduct.selectedOrFirstAvailableVariant);
+    }
+  }, [shopifyProduct?.selectedOrFirstAvailableVariant?.id]);
+  
+  // If product is associated, use selected variant; otherwise use manual input
+  const variant = selectedVariant || shopifyProduct?.selectedOrFirstAvailableVariant;
   
   // Product tag/title: prioritize product title
   const displayTag = shopifyProduct?.title || productTag;
@@ -92,21 +107,28 @@ export const CheckoutProductItem = forwardRef<
       : variant?.title || productVariant || ""
     : productVariant || "";
   
-  // Get product image from Shopify product or manual input
+  // Get product image from selected variant or product or manual input
   const productImageData: Partial<WeaverseImage> | undefined = shopifyProduct
-    ? shopifyProduct.featuredImage
-      ? {
-          url: shopifyProduct.featuredImage.url,
-          altText: shopifyProduct.featuredImage.altText || shopifyProduct.title || "Product",
-        }
-      : shopifyProduct.media?.nodes?.[0]?.previewImage
+    ? (selectedVariant?.image
         ? {
-            url: shopifyProduct.media.nodes[0].previewImage.url,
-            altText: shopifyProduct.media.nodes[0].previewImage.altText || shopifyProduct.title || "Product",
-            width: shopifyProduct.media.nodes[0].previewImage.width,
-            height: shopifyProduct.media.nodes[0].previewImage.height,
+            url: selectedVariant.image.url,
+            altText: selectedVariant.image.altText || shopifyProduct.title || "Product",
+            width: selectedVariant.image.width,
+            height: selectedVariant.image.height,
           }
-        : undefined
+        : shopifyProduct.featuredImage
+          ? {
+              url: shopifyProduct.featuredImage.url,
+              altText: shopifyProduct.featuredImage.altText || shopifyProduct.title || "Product",
+            }
+          : shopifyProduct.media?.nodes?.[0]?.previewImage
+            ? {
+                url: shopifyProduct.media.nodes[0].previewImage.url,
+                altText: shopifyProduct.media.nodes[0].previewImage.altText || shopifyProduct.title || "Product",
+                width: shopifyProduct.media.nodes[0].previewImage.width,
+                height: shopifyProduct.media.nodes[0].previewImage.height,
+              }
+            : undefined)
     : productImage
       ? typeof productImage === "string"
         ? { url: productImage, altText: productTag || "Product" }
@@ -138,8 +160,8 @@ export const CheckoutProductItem = forwardRef<
     }
   };
 
-  // Get Shopify variant ID for ShopPayButton
-  const shopifyVariantId = shopifyProduct?.selectedOrFirstAvailableVariant?.id;
+  // Get Shopify variant ID for ShopPayButton - use selected variant
+  const shopifyVariantId = selectedVariant?.id || shopifyProduct?.selectedOrFirstAvailableVariant?.id;
 
   const handleSelectionChange = (selected: boolean) => {
     setIsSelected(selected);
@@ -181,19 +203,31 @@ export const CheckoutProductItem = forwardRef<
     return String(displayMarketPrice || "");
   }, [displayMarketPrice]);
 
+  // Update product in context when variant, price, or quantity changes (only if selected)
   useEffect(() => {
-    if (isSelected) {
+    if (isSelected && shopifyProduct && selectedVariant) {
+      const currentDisplayVariant = selectedVariant.selectedOptions && selectedVariant.selectedOptions.length > 0
+        ? selectedVariant.selectedOptions
+            .map((opt: { name: string; value: string }) => `${opt.name}: ${opt.value}`)
+            .join(" | ")
+        : selectedVariant.title || "";
+      const currentPrice = selectedVariant.price
+        ? { amount: selectedVariant.price.amount, currencyCode: selectedVariant.price.currencyCode }
+        : displaySalesPrice || "";
+      const currentComparePrice = selectedVariant.compareAtPrice
+        ? { amount: selectedVariant.compareAtPrice.amount, currencyCode: selectedVariant.compareAtPrice.currencyCode }
+        : displayMarketPrice;
       addProduct({
         id: productId,
         title: displayTag || "",
-        variant: displayVariant || "",
-        variantId: shopifyVariantId,
-        price: displaySalesPrice || "",
-        compareAtPrice: displayMarketPrice,
+        variant: currentDisplayVariant,
+        variantId: selectedVariant.id,
+        price: currentPrice,
+        compareAtPrice: currentComparePrice,
         quantity: itemQuantity,
       });
     }
-  }, [isSelected, productId, displayTag, displayVariant, shopifyVariantId, salesPriceKey, marketPriceKey, itemQuantity, addProduct]);
+  }, [isSelected, productId, displayTag, selectedVariant?.id, salesPriceKey, marketPriceKey, itemQuantity, addProduct, shopifyProduct]);
 
   return (
     <div
@@ -252,15 +286,29 @@ export const CheckoutProductItem = forwardRef<
             </div>
           )}
 
-          {/* Product Variant */}
-          {displayVariant && (
+          {/* Product Variant Selector or Display */}
+          {shopifyProduct && selectedVariant ? (
+            <div 
+              className="product-variant-selector mb-2" 
+              onClick={(e) => e.stopPropagation()}
+              style={{ fontSize: "0.875rem" }}
+            >
+              <VariantSelector
+                product={shopifyProduct}
+                selectedVariant={selectedVariant}
+                setSelectedVariant={(newVariant) => {
+                  setSelectedVariant(newVariant);
+                }}
+              />
+            </div>
+          ) : displayVariant ? (
             <div
               className="text-gray-500 block leading-4 product-tag product-variant mb-1 text-base"
               style={{ color: variantTextColor }}
             >
               {displayVariant}
             </div>
-          )}
+          ) : null}
 
           {/* Prices */}
           <div className="flex text-base items-center">
@@ -436,10 +484,53 @@ export const loader = async (
     return { product: null };
   }
   const productHandle = data.product.handle;
+  
+  // Parse default variant options from text string
+  // Supports multiple formats:
+  // 1. Simple format: "Color: Red, Size: Large"
+  // 2. JSON format: [{"name": "Color", "value": "Red"}, {"name": "Size", "value": "Large"}]
+  // 3. Line-separated format: "Color: Red\nSize: Large"
+  let selectedOptions: Array<{ name: string; value: string }> = [];
+  if (data.defaultVariantOptions) {
+    const text = data.defaultVariantOptions.trim();
+    if (text) {
+      // Try JSON format first
+      if (text.startsWith('[') || text.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(text);
+          if (Array.isArray(parsed)) {
+            selectedOptions = parsed.filter(
+              (opt: any) => opt && typeof opt.name === "string" && typeof opt.value === "string"
+            ).map((opt: any) => ({ name: opt.name, value: opt.value }));
+          }
+        } catch (e) {
+          // Fall through to simple format parsing
+        }
+      }
+      
+      // If JSON parsing failed or not JSON, try simple format
+      if (selectedOptions.length === 0) {
+        // Split by comma or newline
+        const pairs = text.split(/[,\n]/).map(s => s.trim()).filter(s => s);
+        for (const pair of pairs) {
+          // Match "Name: Value" format
+          const match = pair.match(/^(.+?):\s*(.+)$/);
+          if (match) {
+            const name = match[1].trim();
+            const value = match[2].trim();
+            if (name && value) {
+              selectedOptions.push({ name, value });
+            }
+          }
+        }
+      }
+    }
+  }
+  
   const { product } = await storefront.query<ProductQuery>(PRODUCT_QUERY, {
     variables: {
       handle: productHandle,
-      selectedOptions: [],
+      selectedOptions,
       language: storefront.i18n.language,
       country: storefront.i18n.country,
     },
@@ -508,6 +599,14 @@ export const schema = createSchema({
             max: 10,
             step: 1,
           },
+        },
+        {
+          type: "textarea",
+          name: "defaultVariantOptions",
+          label: "Default Variant Options",
+          placeholder: "Color: Red, Size: Large",
+          helpText: 'Simple format: "Color: Red, Size: Large" or one per line. Also supports JSON format.',
+          condition: (data: any) => !!data.product,
         },
       ],
     },

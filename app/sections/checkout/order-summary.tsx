@@ -1,6 +1,6 @@
 import { createSchema, type HydrogenComponentProps } from "@weaverse/hydrogen";
 import { Money } from "@shopify/hydrogen";
-import { forwardRef, useMemo } from "react";
+import { forwardRef, useMemo, useEffect } from "react";
 import { useCheckout } from "./checkout-context";
 
 interface CheckoutOrderSummaryData {
@@ -47,16 +47,61 @@ export const CheckoutOrderSummary = forwardRef<
     ...rest
   } = props as CheckoutOrderSummaryData & typeof props;
 
-  const { selectedProducts, getTotalPrice } = useCheckout();
+  const { 
+    selectedProducts, 
+    getTotalPrice,
+    shippingPrice: contextShippingPrice,
+    setShippingPrice,
+    insurancePrice: contextInsurancePrice,
+    setInsurancePrice,
+    isInsuranceSelected,
+    setIsInsuranceSelected,
+  } = useCheckout();
   
+  // Parse shipping price from props and sync to context
+  useEffect(() => {
+    if (shippingPrice) {
+      // Parse price string like "$5.99" to { amount: "5.99", currencyCode: "USD" }
+      const priceMatch = shippingPrice.match(/\$?([\d.]+)/);
+      if (priceMatch) {
+        const amount = priceMatch[1];
+        const currencyCode = shippingPrice.includes("$") ? "USD" : "USD"; // Default to USD, can be enhanced
+        setShippingPrice({ amount, currencyCode });
+      }
+    }
+  }, [shippingPrice, setShippingPrice]);
+
+  // Parse insurance price from props and sync to context (but don't set selected state)
+  useEffect(() => {
+    if (insurancePrice) {
+      // Parse price string like "$1.99" to { amount: "1.99", currencyCode: "USD" }
+      const priceMatch = insurancePrice.match(/\$?([\d.]+)/);
+      if (priceMatch) {
+        const amount = priceMatch[1];
+        const currencyCode = insurancePrice.includes("$") ? "USD" : "USD"; // Default to USD, can be enhanced
+        setInsurancePrice({ amount, currencyCode });
+      }
+    }
+  }, [insurancePrice, setInsurancePrice]);
+
   // Calculate totals from selected products - memoize to prevent unnecessary recalculations
   const calculatedTotal = useMemo(() => getTotalPrice(), [getTotalPrice]);
   const totalQuantity = useMemo(() => {
     return selectedProducts.reduce((sum, p) => sum + p.quantity, 0);
   }, [selectedProducts]);
 
-  // Calculate total price from all selected products
+  // Use calculated total (includes shipping and insurance) or fallback to manual totalPrice
   const displayTotalPrice = calculatedTotal || totalPrice;
+  
+  // Use context shipping price if available, otherwise use props
+  const displayShippingPrice = contextShippingPrice 
+    ? `$${contextShippingPrice.amount}`
+    : shippingPrice;
+  
+  // Use context insurance price if selected, otherwise use props
+  const displayInsurancePrice = (isInsuranceSelected && contextInsurancePrice)
+    ? `$${contextInsurancePrice.amount}`
+    : insurancePrice;
 
   return (
     <div ref={ref} {...rest} className="checkoutSummary py-2.5 sm:py-4">
@@ -181,7 +226,7 @@ export const CheckoutOrderSummary = forwardRef<
         )}
 
         {/* Shipping */}
-        {shippingPrice && (
+        {displayShippingPrice && (
           <div className="flex flex-row justify-between items-center text-sm summary-shipping-row">
             <div className="flex flex-col shipping-row">
               <span
@@ -195,13 +240,13 @@ export const CheckoutOrderSummary = forwardRef<
               className="summary-shipping-right has-shipping text-sm"
               style={{ color: priceColor }}
             >
-              {shippingPrice}
+              {displayShippingPrice}
             </div>
           </div>
         )}
 
-        {/* Insurance */}
-        {insurancePrice && (
+        {/* Insurance - only show if selected */}
+        {isInsuranceSelected && displayInsurancePrice && (
           <div className="flex flex-row justify-between items-center text-sm mt-2.5 summary-insurance-row">
             <div className="summary-insurance-left text-sm" style={{ color: textColor }}>
               {insuranceLabel}
@@ -210,7 +255,7 @@ export const CheckoutOrderSummary = forwardRef<
               className="summary-insurance-right text-sm"
               style={{ color: priceColor }}
             >
-              {insurancePrice}
+              {displayInsurancePrice}
             </div>
           </div>
         )}
