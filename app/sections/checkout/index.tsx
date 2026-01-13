@@ -16,22 +16,25 @@ interface CheckoutData {
 
 type CheckoutProps = HydrogenComponentProps<CheckoutData>;
 
-export const Checkout = forwardRef<HTMLElement, CheckoutProps>(
-  (props, ref) => {
-    const {
-      step1Title = "Step 1: Bundle Of Choice",
-      step2Title = "Step 2: Payment Information",
-      bgColor = "#ffffff",
-      gap = 10,
-      padding = 10,
-      maxWidth = 1280,
-      layout = "horizontal",
-      children,
-      ...rest
-    } = props as CheckoutData & typeof props;
+// Inner component that can use checkout context
+function CheckoutContent({
+  ref,
+  ...props
+}: CheckoutProps & { ref?: React.Ref<HTMLElement> }) {
+  const {
+    step1Title = "Step 1: Bundle Of Choice",
+    step2Title = "Step 2: Payment Information",
+    bgColor = "#ffffff",
+    gap = 10,
+    padding = 10,
+    maxWidth = 1280,
+    layout = "horizontal",
+    children,
+    ...rest
+  } = props as CheckoutData & typeof props;
 
-    const animation = useAnimation();
-    const isVertical = layout === "vertical";
+  const animation = useAnimation();
+  const isVertical = layout === "vertical";
 
     // Create responsive maxWidth style that only applies on lg (1024px) and above
     const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `
@@ -49,31 +52,38 @@ export const Checkout = forwardRef<HTMLElement, CheckoutProps>(
       }
     `;
 
+  return (
+    <Section
+      ref={ref}
+      {...rest}
+      style={{ backgroundColor: bgColor }}
+      data-motion="fade-up"
+      {...animation}
+    >
+      <style>{responsiveMaxWidthStyle}</style>
+      <div
+        className={`checkout-responsive mx-auto checkout-section-box ${
+          isVertical
+            ? "flex flex-col"
+            : "grid grid-cols-1 lg:grid-cols-2"
+        }`}
+        style={{
+          backgroundColor: bgColor,
+          gap: `${gap}px`,
+          padding: `${padding}px`,
+        }}
+      >
+        {children}
+      </div>
+    </Section>
+  );
+}
+
+export const Checkout = forwardRef<HTMLElement, CheckoutProps>(
+  (props, ref) => {
     return (
       <CheckoutProvider>
-        <Section
-          ref={ref}
-          {...rest}
-          style={{ backgroundColor: bgColor }}
-          data-motion="fade-up"
-          {...animation}
-        >
-          <style>{responsiveMaxWidthStyle}</style>
-          <div
-            className={`checkout-responsive mx-auto checkout-section-box ${
-              isVertical
-                ? "flex flex-col"
-                : "grid grid-cols-1 lg:grid-cols-2"
-            }`}
-            style={{
-              backgroundColor: bgColor,
-              gap: `${gap}px`,
-              padding: `${padding}px`,
-            }}
-          >
-            {children}
-          </div>
-        </Section>
+        <CheckoutContent ref={ref} {...props} />
       </CheckoutProvider>
     );
   }

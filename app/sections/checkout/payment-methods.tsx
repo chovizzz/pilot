@@ -4,7 +4,7 @@ import {
   type HydrogenComponentProps,
 } from "@weaverse/hydrogen";
 import { ShopPayButton } from "@shopify/hydrogen";
-import { forwardRef, useMemo } from "react";
+import { forwardRef, useMemo, useEffect, useRef, useCallback } from "react";
 import type { GetShopPrimaryDomainQuery } from "storefront-api.generated";
 import { useCheckout } from "./checkout-context";
 
@@ -56,7 +56,9 @@ export const CheckoutPaymentMethods = forwardRef<
     ...rest
   } = props as CheckoutPaymentMethodsProps;
 
-  const { selectedProducts } = useCheckout();
+  const { selectedProducts, getTotalPrice } = useCheckout();
+  const hasTriggeredBeginCheckout = useRef(false);
+  const checkoutButtonSectionRef = useRef<HTMLDivElement>(null);
 
   const gridCols = columns === "1" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-2";
 
@@ -91,6 +93,92 @@ export const CheckoutPaymentMethods = forwardRef<
 
   const canCheckout = variantIdsAndQuantities.length > 0 && storeDomain;
 
+  // Trigger begin_checkout event when payment button is clicked
+  const triggerBeginCheckout = useCallback(() => {
+    if (hasTriggeredBeginCheckout.current || selectedProducts.length === 0) {
+      return;
+    }
+
+    const totalPrice = getTotalPrice();
+    const checkoutData = {
+      event: "begin_checkout",
+      currency: totalPrice?.currencyCode || "USD",
+      value: totalPrice ? parseFloat(totalPrice.amount) : 0,
+      items: selectedProducts.map((product) => {
+        const price = typeof product.price === "object"
+          ? parseFloat(product.price.amount)
+          : parseFloat(String(product.price).replace(/[^0-9.-]+/g, "")) || 0;
+        return {
+          item_id: product.variantId || product.id,
+          item_name: product.title,
+          item_variant: product.variant,
+          price: price,
+          quantity: product.quantity,
+        };
+      }),
+    };
+    window.dataLayer?.push(checkoutData);
+    hasTriggeredBeginCheckout.current = true;
+    console.log("CustomAnalytics - Begin checkout:", checkoutData);
+  }, [selectedProducts, getTotalPrice]);
+
+  useEffect(() => {
+    if (!canCheckout || selectedProducts.length === 0) {
+      return;
+    }
+
+    const handlePaymentClick = (e: MouseEvent) => {
+      // Check if click is on ShopPayButton or any payment button
+      const target = e.target as HTMLElement;
+      const isPaymentButton = 
+        target.closest('shop-pay-button') ||
+        target.closest('shopify-paypal-button') ||
+        target.closest('shopify-google-pay-button') ||
+        target.closest('shopify-apple-pay-button') ||
+        target.closest('.checkout-button-section') ||
+        target.closest('button[data-payment-button]') ||
+        target.closest('[data-payment-plugin-id]') ||
+        target.id === 'checkout-button' ||
+        (target.tagName === 'BUTTON' && target.closest('.express-checkout-box-section'));
+
+      if (isPaymentButton) {
+        triggerBeginCheckout();
+      }
+    };
+
+    // Listen for clicks on the document (event delegation with capture phase)
+    document.addEventListener('click', handlePaymentClick, true);
+
+    // Use MutationObserver to watch for ShopPayButton being added to DOM
+    const observer = new MutationObserver(() => {
+      const shopPayButton = checkoutButtonSectionRef.current?.querySelector('shop-pay-button');
+      if (shopPayButton && !shopPayButton.hasAttribute('data-checkout-listener')) {
+        shopPayButton.setAttribute('data-checkout-listener', 'true');
+        shopPayButton.addEventListener('click', triggerBeginCheckout, { once: true });
+      }
+    });
+
+    // Observe the checkout button section for changes
+    if (checkoutButtonSectionRef.current) {
+      observer.observe(checkoutButtonSectionRef.current, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    // Also check immediately in case button is already rendered
+    const shopPayButton = checkoutButtonSectionRef.current?.querySelector('shop-pay-button');
+    if (shopPayButton && !shopPayButton.hasAttribute('data-checkout-listener')) {
+      shopPayButton.setAttribute('data-checkout-listener', 'true');
+      shopPayButton.addEventListener('click', triggerBeginCheckout, { once: true });
+    }
+
+    return () => {
+      document.removeEventListener('click', handlePaymentClick, true);
+      observer.disconnect();
+    };
+  }, [canCheckout, selectedProducts.length, triggerBeginCheckout]);
+
   return (
     <div ref={ref} {...rest} className="flex flex-col express-checkout-box-section">
       {/* Express Checkout Buttons */}
@@ -114,7 +202,7 @@ export const CheckoutPaymentMethods = forwardRef<
 
       {/* Checkout Button - Using ShopPayButton */}
       <div className="order-3 checkoutSection">
-        <div className="centerbox checkout-button-section">
+        <div ref={checkoutButtonSectionRef} className="centerbox checkout-button-section">
           {canCheckout ? (
             <ShopPayButton
               width="100%"
