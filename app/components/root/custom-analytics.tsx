@@ -48,22 +48,29 @@ export function CustomAnalytics() {
       window.dataLayer?.push(dataToSentToGTM);
       // Track Axon Pixel view_item event
       const product = data.products?.[0];
-      if (product && product.price != null) {
+      if (product) {
         // TypeScript type guard: we've already checked product.price != null
-        const productPrice = product.price as string | { amount: string; currencyCode?: string };
-        const price = typeof productPrice === "object"
-          ? parseFloat(productPrice.amount || "0")
-          : parseFloat(String(productPrice).replace(/[^0-9.-]+/g, "")) || 0;
-        const currency = typeof productPrice === "object" && productPrice.currencyCode
+        const productPrice = product.price as string | { amount: string; currencyCode?: string } | null | undefined;
+        
+        // If price is null or undefined, use default values
+        const price = productPrice != null
+          ? (typeof productPrice === "object"
+              ? parseFloat(productPrice.amount || "0")
+              : parseFloat(String(productPrice).replace(/[^0-9.-]+/g, "")) || 0)
+          : 0;
+        
+        const currency = productPrice != null && typeof productPrice === "object" && productPrice.currencyCode
           ? productPrice.currencyCode
           : "USD";
+        
+        // Always send view_item event with event_data, even if price is 0
         trackAxonEvent("view_item", {
           currency: currency,
           value: price,
           items: [
             {
-              item_id: product.id,
-              item_name: product.title,
+              item_id: product.id || "",
+              item_name: product.title || "",
               price: price,
               quantity: 1,
             },
@@ -92,27 +99,32 @@ export function CustomAnalytics() {
       // Track Axon Pixel add_to_cart event
       if (data.products?.[0]) {
         const product = data.products[0];
-        if (product.price != null) {
-          const productPrice = product.price as string | { amount: string; currencyCode?: string };
-          const price = typeof productPrice === "object"
-            ? parseFloat(productPrice.amount || "0")
-            : parseFloat(String(productPrice).replace(/[^0-9.-]+/g, "")) || 0;
-          const currency = typeof productPrice === "object" && productPrice.currencyCode
-            ? productPrice.currencyCode
-            : data.currency || "USD";
-          trackAxonEvent("add_to_cart", {
-            currency: currency,
-            value: price * (product.quantity || 1),
-            items: [
-              {
-                item_id: product.id,
-                item_name: product.title,
-                price: price,
-                quantity: product.quantity || 1,
-              },
-            ],
-          });
-        }
+        // Handle price even if it's null or undefined
+        const productPrice = product.price as string | { amount: string; currencyCode?: string } | null | undefined;
+        
+        const price = productPrice != null
+          ? (typeof productPrice === "object"
+              ? parseFloat(productPrice.amount || "0")
+              : parseFloat(String(productPrice).replace(/[^0-9.-]+/g, "")) || 0)
+          : 0;
+        
+        const currency = productPrice != null && typeof productPrice === "object" && productPrice.currencyCode
+          ? productPrice.currencyCode
+          : data.currency || "USD";
+        
+        // Always send add_to_cart event with event_data
+        trackAxonEvent("add_to_cart", {
+          currency: currency,
+          value: price * (product.quantity || 1),
+          items: [
+            {
+              item_id: product.id || "",
+              item_name: product.title || "",
+              price: price,
+              quantity: product.quantity || 1,
+            },
+          ],
+        });
       }
     });
     subscribe(AnalyticsEvent.PRODUCT_REMOVED_FROM_CART, (data) => {
