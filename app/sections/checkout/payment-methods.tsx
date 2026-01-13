@@ -7,6 +7,7 @@ import { ShopPayButton } from "@shopify/hydrogen";
 import { forwardRef, useMemo, useEffect, useRef, useCallback } from "react";
 import type { GetShopPrimaryDomainQuery } from "storefront-api.generated";
 import { useCheckout } from "./checkout-context";
+import { trackAxonEvent } from "~/utils/axon-pixel";
 
 const SHOP_QUERY = `#graphql
   query getShopPrimaryDomain {
@@ -118,6 +119,17 @@ export const CheckoutPaymentMethods = forwardRef<
       }),
     };
     window.dataLayer?.push(checkoutData);
+    // Track Axon Pixel begin_checkout event
+    trackAxonEvent("begin_checkout", {
+      currency: checkoutData.currency,
+      value: checkoutData.value,
+      items: checkoutData.items.map((item) => ({
+        item_id: item.item_id,
+        item_name: item.item_name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+    });
     hasTriggeredBeginCheckout.current = true;
     console.log("CustomAnalytics - Begin checkout:", checkoutData);
   }, [selectedProducts, getTotalPrice]);

@@ -45,6 +45,7 @@ export async function loadCriticalData({
     selectedLocale: storefront.i18n,
     weaverseTheme,
     googleGtmID: env.PUBLIC_GOOGLE_GTM_ID,
+    axonEventKey: env.PUBLIC_AXON_EVENT_KEY,
     swatchesConfigs,
   };
 }
