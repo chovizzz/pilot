@@ -18,6 +18,7 @@ declare global {
     // declare additional Env parameter use in the fetch handler and Remix loader context here
     PUBLIC_GOOGLE_GTM_ID: string;
     PUBLIC_AXON_EVENT_KEY?: string;
+    PUBLIC_STORE_COOKIE_DOMAIN?: string;
     JUDGEME_PRIVATE_API_TOKEN: string;
     CUSTOM_COLLECTION_BANNER_METAFIELD: string;
     METAOBJECT_COLORS_TYPE: string;

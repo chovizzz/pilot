@@ -17,7 +17,7 @@ import { getWeaverseCsp } from "~/weaverse/csp";
 function setAxonUserIdentificationCookie(
   request: Request,
   responseHeaders: Headers,
-  storeDomain?: string,
+  cookieDomain?: string,
 ) {
   // Parse cookies from request
   const cookieHeader = request.headers.get("Cookie");
@@ -48,14 +48,12 @@ function setAxonUserIdentificationCookie(
   // Domain should be the site domain prefixed with a period (e.g., .mysite.com)
   // Note: do not include "www"
   let domain = "";
-  if (storeDomain) {
-    // Remove protocol and path if present
-    const domainUrl = new URL(storeDomain.startsWith("http") ? storeDomain : `https://${storeDomain}`);
-    let hostname = domainUrl.hostname;
+  if (cookieDomain) {
+    // If cookieDomain is provided, use it directly (should already be in the correct format)
+    // If it doesn't start with a period, add it
+    domain = cookieDomain.startsWith(".") ? cookieDomain : `.${cookieDomain}`;
     // Remove www. prefix if present
-    hostname = hostname.replace(/^www\./, "");
-    // Prefix with period
-    domain = `.${hostname}`;
+    domain = domain.replace(/^\.www\./, ".");
   } else {
     // Fallback: extract from request URL
     const url = new URL(request.url);
@@ -92,10 +90,12 @@ export default async function handleRequest(
 
   // Set Axon Pixel enhanced user identification cookie
   // This should be done before rendering to ensure the cookie is set on all responses
+  // Use PUBLIC_STORE_COOKIE_DOMAIN if set, otherwise fallback to PUBLIC_STORE_DOMAIN
+  const cookieDomain = context.env?.PUBLIC_STORE_COOKIE_DOMAIN || context.env?.PUBLIC_STORE_DOMAIN;
   setAxonUserIdentificationCookie(
     request,
     responseHeaders,
-    context.env?.PUBLIC_STORE_DOMAIN,
+    cookieDomain,
   );
 
   const body = await renderToReadableStream(
