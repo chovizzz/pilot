@@ -138,7 +138,7 @@ export const CheckoutPaymentMethods = forwardRef<
     if (!canCheckout || selectedProducts.length === 0) {
       return;
     }
-
+      
     const handlePaymentClick = (e: MouseEvent) => {
       // Check if click is on ShopPayButton or any payment button
       const target = e.target as HTMLElement;
@@ -157,10 +157,7 @@ export const CheckoutPaymentMethods = forwardRef<
         triggerBeginCheckout();
       }
     };
-
-    // Listen for clicks on the document (event delegation with capture phase)
-    document.addEventListener('click', handlePaymentClick, true);
-
+    
     // Use MutationObserver to watch for ShopPayButton being added to DOM
     const observer = new MutationObserver(() => {
       const shopPayButton = checkoutButtonSectionRef.current?.querySelector('shop-pay-button');
@@ -169,21 +166,27 @@ export const CheckoutPaymentMethods = forwardRef<
         shopPayButton.addEventListener('click', triggerBeginCheckout, { once: true });
       }
     });
+    setTimeout(() => {
 
-    // Observe the checkout button section for changes
-    if (checkoutButtonSectionRef.current) {
-      observer.observe(checkoutButtonSectionRef.current, {
-        childList: true,
-        subtree: true,
-      });
-    }
+      // Listen for clicks on the document (event delegation with capture phase)
+      document.addEventListener('click', handlePaymentClick, true);
 
-    // Also check immediately in case button is already rendered
-    const shopPayButton = checkoutButtonSectionRef.current?.querySelector('shop-pay-button');
-    if (shopPayButton && !shopPayButton.hasAttribute('data-checkout-listener')) {
-      shopPayButton.setAttribute('data-checkout-listener', 'true');
-      shopPayButton.addEventListener('click', triggerBeginCheckout, { once: true });
-    }
+
+      // Observe the checkout button section for changes
+      if (checkoutButtonSectionRef.current) {
+        observer.observe(checkoutButtonSectionRef.current, {
+          childList: true,
+          subtree: true,
+        });
+      }
+
+      // Also check immediately in case button is already rendered
+      const shopPayButton = document.querySelector('shop-pay-button');
+      if (shopPayButton && !shopPayButton.hasAttribute('data-checkout-listener')) {
+        shopPayButton.setAttribute('data-checkout-listener', 'true');
+        shopPayButton.addEventListener('click', triggerBeginCheckout, { once: true });
+      }
+    }, 1000);
 
     return () => {
       document.removeEventListener('click', handlePaymentClick, true);
