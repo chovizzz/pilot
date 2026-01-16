@@ -3,7 +3,7 @@ import { forwardRef, useEffect, useRef } from "react";
 import { Section, sectionSettings } from "~/components/section";
 import { useAnimation } from "~/hooks/use-animation";
 import { CheckoutProvider, useCheckout } from "./checkout-context";
-import { trackAxonEvent } from "~/utils/axon-pixel";
+import { trackAxonEvent, getCategoryId } from "~/utils/axon-pixel";
 
 interface CheckoutData {
   step1Title?: string;
@@ -73,27 +73,29 @@ function CheckoutContent({
           ? productPrice.currencyCode
           : currency;
 
-        // Use standard GTM/GA4 format for view_item event with extended Shopify data
+        // Use Axon Pixel standard format for view_item event
+        // Reference: https://support.axon.ai/en/growth/promoting-your-websites/axon-pixel-integration/events-and-objects/
         trackAxonEvent("view_item", {
           currency: priceCurrency,
           value: priceAmount,
           items: [
             {
-              item_id: product.variantId || product.id || "",
+              // Required fields by Axon Pixel
+              item_variant_id: product.variantId || product.id || "",
+              item_id: product.id || "",
               item_name: product.title || "",
-              item_variant: product.variant || "",
-              item_brand: product.vendor || "",
-              item_category: product.productType || "",
-              item_category2: product.tags?.[0] || "",
-              item_category3: product.tags?.[1] || "",
-              item_category4: product.tags?.[2] || "",
-              item_category5: product.tags?.[3] || "",
               price: priceAmount,
               quantity: 1,
-              // Additional Shopify fields
-              ...(product.sku && { item_sku: product.sku }),
-              ...(product.imageUrl && { item_image_url: product.imageUrl }),
+              image_url: product.imageUrl || "",
+              item_category_id: getCategoryId(product.productType, product.tags),
+              // Optional fields
+              ...(product.vendor && { item_brand: product.vendor }),
+              ...(product.sku && { sku: product.sku }),
               ...(product.productUrl && { item_url: product.productUrl }),
+              // Additional Shopify fields (extended)
+              ...(product.variant && { variant: product.variant }),
+              ...(product.productType && { product_type: product.productType }),
+              ...(product.tags && product.tags.length > 0 && { tags: product.tags }),
             },
           ],
         });
@@ -124,27 +126,38 @@ function CheckoutContent({
 
         const totalValue = priceAmount * (product.quantity || 1);
 
-        // Use standard GTM/GA4 format for add_to_cart event with extended Shopify data
+        // Use Axon Pixel standard format for add_to_cart event
+        // Reference: https://support.axon.ai/en/growth/promoting-your-websites/axon-pixel-integration/events-and-objects/
+        const comparePriceAmount = product.compareAtPrice
+          ? typeof product.compareAtPrice === "object"
+            ? parseFloat(product.compareAtPrice.amount || "0")
+            : parseFloat(String(product.compareAtPrice).replace(/[^0-9.-]+/g, "")) || 0
+          : 0;
+        const discount = comparePriceAmount > priceAmount ? comparePriceAmount - priceAmount : 0;
+
         trackAxonEvent("add_to_cart", {
           currency: priceCurrency,
           value: totalValue,
           items: [
             {
-              item_id: product.variantId || product.id || "",
+              // Required fields by Axon Pixel
+              item_variant_id: product.variantId || product.id || "",
+              item_id: product.id || "",
               item_name: product.title || "",
-              item_variant: product.variant || "",
-              item_brand: product.vendor || "",
-              item_category: product.productType || "",
-              item_category2: product.tags?.[0] || "",
-              item_category3: product.tags?.[1] || "",
-              item_category4: product.tags?.[2] || "",
-              item_category5: product.tags?.[3] || "",
               price: priceAmount,
               quantity: product.quantity || 1,
-              // Additional Shopify fields
-              ...(product.sku && { item_sku: product.sku }),
-              ...(product.imageUrl && { item_image_url: product.imageUrl }),
+              image_url: product.imageUrl || "",
+              item_category_id: getCategoryId(product.productType, product.tags),
+              // Optional fields
+              ...(product.vendor && { item_brand: product.vendor }),
+              ...(product.vendor && { affiliation: product.vendor }),
+              ...(discount > 0 && { discount: discount }),
+              ...(product.sku && { sku: product.sku }),
               ...(product.productUrl && { item_url: product.productUrl }),
+              // Additional Shopify fields (extended)
+              ...(product.variant && { variant: product.variant }),
+              ...(product.productType && { product_type: product.productType }),
+              ...(product.tags && product.tags.length > 0 && { tags: product.tags }),
             },
           ],
         });

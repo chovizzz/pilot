@@ -11,7 +11,7 @@ import {
 import { useEffect } from "react";
 import { useRouteLoaderData } from "react-router";
 import type { RootLoader } from "~/root";
-import { trackAxonEvent } from "~/utils/axon-pixel";
+import { trackAxonEvent, getCategoryId } from "~/utils/axon-pixel";
 
 export function CustomAnalytics() {
   const { subscribe, canTrack } = useAnalytics();
@@ -64,21 +64,27 @@ export function CustomAnalytics() {
           : "USD";
         
         // Always send view_item event with event_data, even if price is 0
-        // Use standard GTM/GA4 format with extended Shopify data
+        // Use Axon Pixel standard format
+        // Reference: https://support.axon.ai/en/growth/promoting-your-websites/axon-pixel-integration/events-and-objects/
         trackAxonEvent("view_item", {
           currency: currency,
           value: price,
           items: [
             {
-              item_id: product.variantId || product.id || "",
+              // Required fields by Axon Pixel
+              item_variant_id: product.variantId || product.id || "",
+              item_id: product.id || "",
               item_name: product.title || "",
-              item_variant: product.variantTitle || "",
-              item_brand: product.vendor || "",
-              item_category: product.type || "",
               price: price,
               quantity: 1,
-              // Additional Shopify fields
+              image_url: "", // ProductViewPayload may not have image URL
+              item_category_id: getCategoryId(product.type as string | undefined, []),
+              // Optional fields
+              ...(product.vendor && { item_brand: product.vendor }),
               ...(product.url && { item_url: product.url }),
+              // Additional Shopify fields (extended)
+              ...(product.variantTitle && { variant: product.variantTitle }),
+              ...(product.type && { product_type: product.type }),
             },
           ],
         });
@@ -119,21 +125,28 @@ export function CustomAnalytics() {
           : data.currency || "USD";
         
         // Always send add_to_cart event with event_data
-        // Use standard GTM/GA4 format with extended Shopify data
+        // Use Axon Pixel standard format
+        // Reference: https://support.axon.ai/en/growth/promoting-your-websites/axon-pixel-integration/events-and-objects/
         trackAxonEvent("add_to_cart", {
           currency: currency,
           value: price * (product.quantity || 1),
           items: [
             {
-              item_id: product.variantId || product.id || "",
+              // Required fields by Axon Pixel
+              item_variant_id: product.variantId || product.id || "",
+              item_id: product.id || "",
               item_name: product.title || "",
-              item_variant: product.variantTitle || "",
-              item_brand: product.vendor || "",
-              item_category: product.type || "",
               price: price,
               quantity: product.quantity || 1,
-              // Additional Shopify fields
+              image_url: "", // ProductViewPayload may not have image URL
+              item_category_id: getCategoryId(product.type as string | undefined, []),
+              // Optional fields
+              ...(product.vendor && { item_brand: product.vendor }),
+              ...(product.vendor && { affiliation: product.vendor }),
               ...(product.url && { item_url: product.url }),
+              // Additional Shopify fields (extended)
+              ...(product.variantTitle && { variant: product.variantTitle }),
+              ...(product.type && { product_type: product.type }),
             },
           ],
         });
