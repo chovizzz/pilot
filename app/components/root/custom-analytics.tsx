@@ -76,10 +76,11 @@ export function CustomAnalytics() {
               item_id: product.id || "",
               item_name: product.title || "",
               price: price,
-              quantity: 1,
-              image_url: "", // ProductViewPayload may not have image URL
+              quantity: product.quantity || 1, // Always required, default to 1 for view_item
+              // image_url is required but will be kept even if empty
+              ...(product.imageUrl && { image_url: product.imageUrl }),
               item_category_id: getCategoryId(product.type as string | undefined, []),
-              // Optional fields
+              // Optional fields (only include if not empty)
               ...(product.vendor && { item_brand: product.vendor }),
               ...(product.url && { item_url: product.url }),
               // Additional Shopify fields (extended)
@@ -138,9 +139,10 @@ export function CustomAnalytics() {
               item_name: product.title || "",
               price: price,
               quantity: product.quantity || 1,
-              image_url: "", // ProductViewPayload may not have image URL
+              // image_url is required but will be kept even if empty
+              ...(product.imageUrl && { image_url: product.imageUrl }),
               item_category_id: getCategoryId(product.type as string | undefined, []),
-              // Optional fields
+              // Optional fields (only include if not empty)
               ...(product.vendor && { item_brand: product.vendor }),
               ...(product.vendor && { affiliation: product.vendor }),
               ...(product.url && { item_url: product.url }),

@@ -332,6 +332,110 @@ export function getCategoryId(productType?: string, tags?: string[]): number {
 }
 
 /**
+ * Required fields for Axon Pixel items
+ * Reference: https://support.axon.ai/en/growth/promoting-your-websites/axon-pixel-integration/events-and-objects/
+ * 
+ * Note: quantity is always required and must not be null. Defaults to 1 if missing or invalid.
+ */
+const REQUIRED_ITEM_FIELDS = new Set([
+  "item_variant_id",
+  "item_id",
+  "item_name",
+  "price",
+  "image_url",
+  "item_category_id",
+  "quantity", // Always required, must not be null
+]);
+
+/**
+ * Check if a value is empty (null, undefined, empty string, empty array, empty object)
+ */
+function isEmpty(value: any): boolean {
+  if (value === null || value === undefined) {
+    return true;
+  }
+  if (typeof value === "string") {
+    return value.trim() === "";
+  }
+  if (Array.isArray(value)) {
+    return value.length === 0;
+  }
+  if (typeof value === "object") {
+    return Object.keys(value).length === 0;
+  }
+  return false;
+}
+
+/**
+ * Clean item object by removing empty optional fields
+ * Required fields are always kept, even if empty
+ * @param item - Item object to clean
+ * @param isViewItem - Whether this is for view_item event
+ * @returns Cleaned item object
+ */
+function cleanItem(item: any, isViewItem = false): any {
+  const cleaned: any = {};
+  const requiredFields = new Set(REQUIRED_ITEM_FIELDS);
+  
+  // Quantity is always required, even for view_item event
+  // Don't remove it from required fields
+  
+  // Always include required fields, even if empty (if they exist in item)
+  // Required fields are kept as-is, even if value is empty string
+  for (const field of requiredFields) {
+    if (field in item) {
+      cleaned[field] = item[field];
+    }
+  }
+  
+  // Ensure quantity is always present and not null/undefined
+  // Default to 1 if missing or invalid
+  if (!("quantity" in cleaned) || cleaned.quantity === null || cleaned.quantity === undefined) {
+    cleaned.quantity = typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1;
+  } else if (typeof cleaned.quantity !== "number" || cleaned.quantity <= 0) {
+    // If quantity exists but is invalid (not a number or <= 0), set to 1
+    cleaned.quantity = 1;
+  }
+  
+  // Include optional fields only if they are not empty
+  for (const [key, value] of Object.entries(item)) {
+    if (!requiredFields.has(key) && !isEmpty(value)) {
+      cleaned[key] = value;
+    }
+  }
+  
+  return cleaned;
+}
+
+/**
+ * Clean event data by removing empty optional fields
+ * @param eventData - Event data object to clean
+ * @param eventName - Event name to determine field requirements
+ * @returns Cleaned event data object
+ */
+function cleanEventData(eventData: any, eventName: string): any {
+  if (!eventData || typeof eventData !== "object") {
+    return eventData;
+  }
+  
+  const cleaned: any = {};
+  const isViewItem = eventName === "view_item";
+  
+  // Clean top-level fields (currency, value, etc.)
+  for (const [key, value] of Object.entries(eventData)) {
+    if (key === "items" && Array.isArray(value)) {
+      // Clean items array
+      cleaned.items = value.map((item: any) => cleanItem(item, isViewItem));
+    } else if (!isEmpty(value)) {
+      // Include non-empty optional fields
+      cleaned[key] = value;
+    }
+  }
+  
+  return cleaned;
+}
+
+/**
  * Helper function to track Axon Pixel events
  * @param eventName - The name of the event (e.g., "page_view", "add_to_cart", "begin_checkout", "purchase")
  * @param eventData - Optional event data object (required for all events except "page_view")
@@ -390,7 +494,10 @@ export function trackAxonEvent(eventName: string, eventData?: any) {
     });
   }
 
-  // Send event with event_data
-  (window as any).axon("track", eventName, eventData);
+  // Clean event data: remove empty optional fields, keep required fields
+  const cleanedEventData = cleanEventData(eventData, eventName);
+
+  // Send event with cleaned event_data
+  (window as any).axon("track", eventName, cleanedEventData);
 }
 

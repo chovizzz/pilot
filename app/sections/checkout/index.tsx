@@ -85,10 +85,11 @@ function CheckoutContent({
               item_id: product.id || "",
               item_name: product.title || "",
               price: priceAmount,
-              quantity: 1,
-              image_url: product.imageUrl || "",
+              quantity: product.quantity || 1, // Always required, default to 1 for view_item
+              // image_url is required but will be kept even if empty
+              ...(product.imageUrl && { image_url: product.imageUrl }),
               item_category_id: getCategoryId(product.productType, product.tags),
-              // Optional fields
+              // Optional fields (only include if not empty)
               ...(product.vendor && { item_brand: product.vendor }),
               ...(product.sku && { sku: product.sku }),
               ...(product.productUrl && { item_url: product.productUrl }),
@@ -146,9 +147,10 @@ function CheckoutContent({
               item_name: product.title || "",
               price: priceAmount,
               quantity: product.quantity || 1,
-              image_url: product.imageUrl || "",
+              // image_url is required but will be kept even if empty
+              ...(product.imageUrl && { image_url: product.imageUrl }),
               item_category_id: getCategoryId(product.productType, product.tags),
-              // Optional fields
+              // Optional fields (only include if not empty)
               ...(product.vendor && { item_brand: product.vendor }),
               ...(product.vendor && { affiliation: product.vendor }),
               ...(discount > 0 && { discount: discount }),

@@ -182,6 +182,7 @@ export const CheckoutProductItem = forwardRef<
   const handleSelectionChange = (selected: boolean) => {
     setIsSelected(selected);
     if (selected) {
+      // Include all necessary fields including imageUrl for analytics
       addProduct({
         id: productId,
         title: displayTag || "",
@@ -190,6 +191,16 @@ export const CheckoutProductItem = forwardRef<
         price: displaySalesPrice || "",
         compareAtPrice: displayMarketPrice,
         quantity: itemQuantity,
+        // Include analytics fields
+        ...(shopifyProduct && {
+          vendor: shopifyProduct.vendor || "",
+          productType: (shopifyProduct as any).productType || "",
+          handle: shopifyProduct.handle || "",
+          tags: shopifyProduct.tags || [],
+        }),
+        ...(imageUrl && { imageUrl }),
+        ...(productUrl && { productUrl }),
+        ...(selectedVariant?.sku && { sku: selectedVariant.sku }),
       });
     } else {
       removeProduct(productId);
