@@ -1,8 +1,9 @@
 import { createSchema, type HydrogenComponentProps } from "@weaverse/hydrogen";
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useRef } from "react";
 import { Section, sectionSettings } from "~/components/section";
 import { useAnimation } from "~/hooks/use-animation";
-import { CheckoutProvider } from "./checkout-context";
+import { CheckoutProvider, useCheckout } from "./checkout-context";
+import { trackAxonEvent } from "~/utils/axon-pixel";
 
 interface CheckoutData {
   step1Title?: string;
@@ -35,6 +36,123 @@ function CheckoutContent({
 
   const animation = useAnimation();
   const isVertical = layout === "vertical";
+  const { selectedProducts } = useCheckout();
+  const hasReportedRef = useRef<Set<string>>(new Set());
+
+  // Track view_item and add_to_cart events when products are present
+  useEffect(() => {
+    if (selectedProducts.length === 0) {
+      return;
+    }
+
+    // Determine currency from first product
+    const firstProduct = selectedProducts[0];
+    const currency = firstProduct.price
+      ? typeof firstProduct.price === "object"
+        ? firstProduct.price.currencyCode
+        : "USD"
+      : "USD";
+
+    // Track view_item event for each product (only once per product)
+    selectedProducts.forEach((product) => {
+      const productKey = `view_${product.id}`;
+      if (!hasReportedRef.current.has(productKey)) {
+        const productPrice = product.price as
+          | { amount: string; currencyCode?: string }
+          | string
+          | null
+          | undefined;
+
+        const priceAmount = productPrice != null
+          ? typeof productPrice === "object"
+            ? parseFloat(productPrice.amount || "0")
+            : parseFloat(String(productPrice).replace(/[^0-9.-]+/g, "")) || 0
+          : 0;
+
+        const priceCurrency = productPrice != null && typeof productPrice === "object" && productPrice.currencyCode
+          ? productPrice.currencyCode
+          : currency;
+
+        // Use standard GTM/GA4 format for view_item event with extended Shopify data
+        trackAxonEvent("view_item", {
+          currency: priceCurrency,
+          value: priceAmount,
+          items: [
+            {
+              item_id: product.variantId || product.id || "",
+              item_name: product.title || "",
+              item_variant: product.variant || "",
+              item_brand: product.vendor || "",
+              item_category: product.productType || "",
+              item_category2: product.tags?.[0] || "",
+              item_category3: product.tags?.[1] || "",
+              item_category4: product.tags?.[2] || "",
+              item_category5: product.tags?.[3] || "",
+              price: priceAmount,
+              quantity: 1,
+              // Additional Shopify fields
+              ...(product.sku && { item_sku: product.sku }),
+              ...(product.imageUrl && { item_image_url: product.imageUrl }),
+              ...(product.productUrl && { item_url: product.productUrl }),
+            },
+          ],
+        });
+
+        hasReportedRef.current.add(productKey);
+      }
+    });
+
+    // Track add_to_cart event for each product
+    selectedProducts.forEach((product) => {
+      const cartKey = `cart_${product.id}_${product.quantity}`;
+      if (!hasReportedRef.current.has(cartKey)) {
+        const productPrice = product.price as
+          | { amount: string; currencyCode?: string }
+          | string
+          | null
+          | undefined;
+
+        const priceAmount = productPrice != null
+          ? typeof productPrice === "object"
+            ? parseFloat(productPrice.amount || "0")
+            : parseFloat(String(productPrice).replace(/[^0-9.-]+/g, "")) || 0
+          : 0;
+
+        const priceCurrency = productPrice != null && typeof productPrice === "object" && productPrice.currencyCode
+          ? productPrice.currencyCode
+          : currency;
+
+        const totalValue = priceAmount * (product.quantity || 1);
+
+        // Use standard GTM/GA4 format for add_to_cart event with extended Shopify data
+        trackAxonEvent("add_to_cart", {
+          currency: priceCurrency,
+          value: totalValue,
+          items: [
+            {
+              item_id: product.variantId || product.id || "",
+              item_name: product.title || "",
+              item_variant: product.variant || "",
+              item_brand: product.vendor || "",
+              item_category: product.productType || "",
+              item_category2: product.tags?.[0] || "",
+              item_category3: product.tags?.[1] || "",
+              item_category4: product.tags?.[2] || "",
+              item_category5: product.tags?.[3] || "",
+              price: priceAmount,
+              quantity: product.quantity || 1,
+              // Additional Shopify fields
+              ...(product.sku && { item_sku: product.sku }),
+              ...(product.imageUrl && { item_image_url: product.imageUrl }),
+              ...(product.productUrl && { item_url: product.productUrl }),
+            },
+          ],
+        });
+
+        hasReportedRef.current.add(cartKey);
+      }
+    });
+  }, [selectedProducts]);
 
     // Create responsive maxWidth style that only applies on lg (1024px) and above
     const responsiveMaxWidthStyle = maxWidth && maxWidth > 0 ? `

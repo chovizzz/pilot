@@ -8,11 +8,12 @@ import {
 import { Money } from "@shopify/hydrogen";
 import { forwardRef, useState, useEffect, useId, useMemo } from "react";
 import type { ProductQuery, ProductVariantFragment } from "storefront-api.generated";
-import { Image } from "~/components/image";
+import { Image, getProductOptions } from "@shopify/hydrogen";
+import * as Select from "@radix-ui/react-select";
+import { CaretDownIcon, CheckIcon } from "@phosphor-icons/react";
 import { PRODUCT_QUERY } from "~/graphql/queries";
 import { useAnimation } from "~/hooks/use-animation";
 import { useCheckout } from "./checkout-context";
-import { VariantSelector } from "~/components/product/variant-selector";
 
 interface CheckoutProductItemData {
   product?: WeaverseProduct;
@@ -108,32 +109,47 @@ export const CheckoutProductItem = forwardRef<
     : productVariant || "";
   
   // Get product image from selected variant or product or manual input
-  const productImageData: Partial<WeaverseImage> | undefined = shopifyProduct
-    ? (selectedVariant?.image
-        ? {
-            url: selectedVariant.image.url,
-            altText: selectedVariant.image.altText || shopifyProduct.title || "Product",
-            width: selectedVariant.image.width,
-            height: selectedVariant.image.height,
-          }
-        : shopifyProduct.featuredImage
-          ? {
-              url: shopifyProduct.featuredImage.url,
-              altText: shopifyProduct.featuredImage.altText || shopifyProduct.title || "Product",
-            }
-          : shopifyProduct.media?.nodes?.[0]?.previewImage
-            ? {
-                url: shopifyProduct.media.nodes[0].previewImage.url,
-                altText: shopifyProduct.media.nodes[0].previewImage.altText || shopifyProduct.title || "Product",
-                width: shopifyProduct.media.nodes[0].previewImage.width,
-                height: shopifyProduct.media.nodes[0].previewImage.height,
-              }
-            : undefined)
-    : productImage
-      ? typeof productImage === "string"
+  // Use useMemo to stabilize object reference and prevent infinite loops
+  const productImageData: Partial<WeaverseImage> | undefined = useMemo(() => {
+    if (shopifyProduct) {
+      if (selectedVariant?.image) {
+        return {
+          url: selectedVariant.image.url,
+          altText: selectedVariant.image.altText || shopifyProduct.title || "Product",
+          width: selectedVariant.image.width,
+          height: selectedVariant.image.height,
+        };
+      }
+      if (shopifyProduct.featuredImage) {
+        return {
+          url: shopifyProduct.featuredImage.url,
+          altText: shopifyProduct.featuredImage.altText || shopifyProduct.title || "Product",
+        };
+      }
+      if (shopifyProduct.media?.nodes?.[0]?.previewImage) {
+        return {
+          url: shopifyProduct.media.nodes[0].previewImage.url,
+          altText: shopifyProduct.media.nodes[0].previewImage.altText || shopifyProduct.title || "Product",
+          width: shopifyProduct.media.nodes[0].previewImage.width,
+          height: shopifyProduct.media.nodes[0].previewImage.height,
+        };
+      }
+      return undefined;
+    }
+    if (productImage) {
+      return typeof productImage === "string"
         ? { url: productImage, altText: productTag || "Product" }
-        : productImage
-      : undefined;
+        : productImage;
+    }
+    return undefined;
+  }, [
+    shopifyProduct?.id,
+    selectedVariant?.image?.url,
+    shopifyProduct?.featuredImage?.url,
+    shopifyProduct?.media?.nodes?.[0]?.previewImage?.url,
+    productImage,
+    productTag,
+  ]);
 
   // Get prices from Shopify product or manual input
   // Prioritize product variant price if product is associated
@@ -203,118 +219,212 @@ export const CheckoutProductItem = forwardRef<
     return String(displayMarketPrice || "");
   }, [displayMarketPrice]);
 
+  // Memoize product URL and image URL to prevent unnecessary recalculations
+  const productUrl = useMemo(() => {
+    if (!shopifyProduct?.handle || !selectedVariant?.id) return "";
+    const variantId = selectedVariant.id.split("/").pop();
+    return `/products/${shopifyProduct.handle}${variantId ? `?variant=${variantId}` : ""}`;
+  }, [shopifyProduct?.handle, selectedVariant?.id]);
+
+  const imageUrl = useMemo(() => {
+    return selectedVariant?.image?.url
+      || shopifyProduct?.featuredImage?.url
+      || shopifyProduct?.media?.nodes?.[0]?.previewImage?.url
+      || (productImageData && typeof productImageData === "object" && productImageData.url ? productImageData.url : "")
+      || "";
+  }, [
+    selectedVariant?.image?.url,
+    shopifyProduct?.featuredImage?.url,
+    shopifyProduct?.media?.nodes?.[0]?.previewImage?.url,
+    productImageData?.url,
+  ]);
+
+  // Memoize variant display string
+  const currentDisplayVariant = useMemo(() => {
+    if (!selectedVariant) return "";
+    return selectedVariant.selectedOptions && selectedVariant.selectedOptions.length > 0
+      ? selectedVariant.selectedOptions
+          .map((opt: { name: string; value: string }) => `${opt.name}: ${opt.value}`)
+          .join(" | ")
+      : selectedVariant.title || "";
+  }, [selectedVariant?.selectedOptions, selectedVariant?.title]);
+
   // Update product in context when variant, price, or quantity changes (only if selected)
   useEffect(() => {
-    if (isSelected && shopifyProduct && selectedVariant) {
-      const currentDisplayVariant = selectedVariant.selectedOptions && selectedVariant.selectedOptions.length > 0
-        ? selectedVariant.selectedOptions
-            .map((opt: { name: string; value: string }) => `${opt.name}: ${opt.value}`)
-            .join(" | ")
-        : selectedVariant.title || "";
-      const currentPrice = selectedVariant.price
-        ? { amount: selectedVariant.price.amount, currencyCode: selectedVariant.price.currencyCode }
-        : displaySalesPrice || "";
-      const currentComparePrice = selectedVariant.compareAtPrice
-        ? { amount: selectedVariant.compareAtPrice.amount, currencyCode: selectedVariant.compareAtPrice.currencyCode }
-        : displayMarketPrice;
-      addProduct({
-        id: productId,
-        title: displayTag || "",
-        variant: currentDisplayVariant,
-        variantId: selectedVariant.id,
-        price: currentPrice,
-        compareAtPrice: currentComparePrice,
-        quantity: itemQuantity,
-      });
+    if (!isSelected || !shopifyProduct || !selectedVariant) return;
+
+    const currentPrice = selectedVariant.price
+      ? { amount: selectedVariant.price.amount, currencyCode: selectedVariant.price.currencyCode }
+      : displaySalesPrice || "";
+    const currentComparePrice = selectedVariant.compareAtPrice
+      ? { amount: selectedVariant.compareAtPrice.amount, currencyCode: selectedVariant.compareAtPrice.currencyCode }
+      : displayMarketPrice;
+
+    addProduct({
+      id: productId,
+      title: displayTag || "",
+      variant: currentDisplayVariant,
+      variantId: selectedVariant.id,
+      price: currentPrice,
+      compareAtPrice: currentComparePrice,
+      quantity: itemQuantity,
+      vendor: shopifyProduct.vendor || "",
+      productType: (shopifyProduct as any).productType || "",
+      handle: shopifyProduct.handle || "",
+      productUrl: productUrl,
+      imageUrl: imageUrl,
+      sku: selectedVariant.sku || null,
+      tags: shopifyProduct.tags || [],
+    });
+  }, [
+    isSelected,
+    productId,
+    displayTag,
+    selectedVariant?.id,
+    selectedVariant?.price?.amount,
+    selectedVariant?.price?.currencyCode,
+    selectedVariant?.compareAtPrice?.amount,
+    selectedVariant?.compareAtPrice?.currencyCode,
+    selectedVariant?.sku,
+    currentDisplayVariant,
+    salesPriceKey,
+    marketPriceKey,
+    itemQuantity,
+    addProduct,
+    shopifyProduct?.id,
+    shopifyProduct?.vendor,
+    (shopifyProduct as any)?.productType,
+    shopifyProduct?.handle,
+    shopifyProduct?.tags,
+    productUrl,
+    imageUrl,
+  ]);
+
+  // Get product options for separate dropdowns (Color, Size, etc.)
+  const productOptions = useMemo(() => {
+    if (!shopifyProduct || !selectedVariant) return [];
+    return getProductOptions({
+      ...shopifyProduct,
+      selectedOrFirstAvailableVariant: selectedVariant,
+    });
+  }, [shopifyProduct, selectedVariant]);
+
+  // Handle option change
+  const handleOptionChange = (optionName: string, optionValue: string) => {
+    if (!shopifyProduct || !selectedVariant) return;
+    
+    // Find the option value object
+    const option = productOptions.find(opt => opt.name === optionName);
+    if (!option) return;
+    
+    const optionValueObj = option.optionValues.find(val => val.name === optionValue);
+    if (!optionValueObj || !optionValueObj.available) return;
+    
+    // Use firstSelectableVariant if available
+    if (optionValueObj.firstSelectableVariant) {
+      setSelectedVariant(optionValueObj.firstSelectableVariant);
     }
-  }, [isSelected, productId, displayTag, selectedVariant?.id, salesPriceKey, marketPriceKey, itemQuantity, addProduct, shopifyProduct]);
+  };
 
   return (
     <div
       ref={ref}
       {...rest}
-      className="relative flex items-center justify-between rounded-md product-hover product-row border mb-2.5 sm:mb-4 p-2 md:p-3 cursor-pointer"
+      className={`group relative flex flex-col gap-4 rounded-xl border-2 transition-all duration-300 mb-4 p-4 sm:p-5 cursor-pointer ${
+        isSelected
+          ? "shadow-lg scale-[1.02]"
+          : "shadow-sm hover:shadow-md hover:scale-[1.01]"
+      }`}
       style={{
-        backgroundColor: isSelected ? selectedBgColor : "transparent",
+        backgroundColor: isSelected ? selectedBgColor : "#ffffff",
         borderColor: isSelected ? selectedBorderColor : borderColor,
-        borderWidth: isSelected ? "3px" : "1px",
       }}
       onClick={() => handleSelectionChange(!isSelected)}
       data-motion="fade-up"
       {...animation}
     >
-      <div className="flex items-center w-full cursor-pointer sm:w-3/4">
+      {/* Top Row: Checkbox, Image, and Product Info */}
+      <div className="flex items-start gap-4">
         {/* Checkbox */}
-        <div className="flex items-center justify-center h-5 product-option mr-2.5 sm:mr-3">
-          <div className="relative">
-            <span className="absolute w-full h-full z-10 inline-block"></span>
+        <div className="flex items-start pt-1 shrink-0">
+          <div className="relative flex items-center justify-center">
             <input
               name="product"
               type="checkbox"
               checked={isSelected}
               onChange={(e) => handleSelectionChange(e.target.checked)}
-              className="w-5 h-5 text-green-700 rounded border border-gray-300 cursor-pointer"
+              className="w-5 h-5 sm:w-6 sm:h-6 rounded-md border-2 cursor-pointer transition-all duration-200 accent-green-600 hover:accent-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              style={{
+                borderColor: isSelected ? selectedBorderColor : borderColor,
+              }}
             />
+            {isSelected && (
+              <svg
+                className="absolute w-3 h-3 sm:w-4 sm:h-4 text-white pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="3"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            )}
           </div>
         </div>
 
         {/* Product Image */}
         {productImageData && (
-          <Image
-            data={productImageData}
-            alt={displayTag || ""}
-            className="ml-2.5 sm:ml-3 product-image h-[6.25rem] w-[6.25rem] object-cover rounded"
-            loading="lazy"
-            sizes="auto"
-          />
+          <div className="relative shrink-0">
+            <div
+              className={`relative overflow-hidden rounded-lg transition-all duration-300 aspect-square ${
+                isSelected ? "ring-2 ring-offset-2" : ""
+              }`}
+              style={
+                isSelected
+                  ? ({
+                      "--tw-ring-color": selectedBorderColor,
+                    } as React.CSSProperties)
+                  : undefined
+              }
+            >
+              <Image
+                data={productImageData}
+                alt={displayTag || ""}
+                className="w-20 h-20 sm:w-24 sm:h-24 object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
+                sizes="(max-width: 640px) 80px, 96px"
+                aspectRatio="1/1"
+              />
+            </div>
+          </div>
         )}
 
         {/* Product Info */}
-        <div className="ml-2.5 sm:ml-3 text-base leading-4 flex flex-col justify-around product-info flex-1">
+        <div className="flex-1 min-w-0">
           {/* Product Tag */}
           {displayTag && (
-            <div className="mb-2 flex flex-wrap gap-1">
-              <label
-                className="px-2 py-1 rounded product-tag-info text-sm font-medium"
+            <div className="mb-2">
+              <span
+                className="inline-block px-3 py-1.5 rounded-lg text-sm font-semibold shadow-sm"
                 style={{
                   backgroundColor: productTagBgColor,
                   color: productTagColor,
                 }}
               >
                 {displayTag}
-              </label>
+              </span>
             </div>
           )}
 
-          {/* Product Variant Selector or Display */}
-          {shopifyProduct && selectedVariant ? (
-            <div 
-              className="product-variant-selector mb-2" 
-              onClick={(e) => e.stopPropagation()}
-              style={{ fontSize: "0.875rem" }}
-            >
-              <VariantSelector
-                product={shopifyProduct}
-                selectedVariant={selectedVariant}
-                setSelectedVariant={(newVariant) => {
-                  setSelectedVariant(newVariant);
-                }}
-              />
-            </div>
-          ) : displayVariant ? (
-            <div
-              className="text-gray-500 block leading-4 product-tag product-variant mb-1 text-base"
-              style={{ color: variantTextColor }}
-            >
-              {displayVariant}
-            </div>
-          ) : null}
-
           {/* Prices */}
-          <div className="flex text-base items-center">
+          <div className="flex items-baseline gap-2 mb-3">
             {displaySalesPrice && (
               <div
-                className="font-bold sales-price text-xl"
+                className="font-bold text-xl sm:text-2xl"
                 style={{ color: salesPriceColor }}
               >
                 {typeof displaySalesPrice === "string" ? (
@@ -330,7 +440,7 @@ export const CheckoutProductItem = forwardRef<
             )}
             {displayMarketPrice && (
               <div
-                className="line-through ml-1 market-price text-sm"
+                className="line-through text-sm sm:text-base opacity-70"
                 style={{ color: marketPriceColor }}
               >
                 {typeof displayMarketPrice === "string" ? (
@@ -346,126 +456,146 @@ export const CheckoutProductItem = forwardRef<
             )}
           </div>
 
-          {/* Mobile Quantity Selector */}
-          <div className="input-num-none w-28 py-0 sm:py-2 border border-gray-200 mt-1 rounded-md items-center justify-center flex sm:hidden">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleQuantityChange(-1);
-              }}
-              className="h-6 w-6 flex items-center justify-center cursor-pointer text-gray-200 hover:text-gray-700"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                className="h-6 w-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M18 12H6"
-                />
-              </svg>
-            </button>
-            <input
-              type="number"
-              value={itemQuantity}
-              onChange={(e) => {
-                const val = parseInt(e.target.value) || 1;
-                setItemQuantity(Math.max(1, val));
-              }}
+          {/* Variant Selectors - Separate Dropdowns for each option (Color, Size, etc.) */}
+          {shopifyProduct && selectedVariant && productOptions.length > 0 ? (
+            <div
+              className="flex flex-wrap gap-3"
               onClick={(e) => e.stopPropagation()}
-              className="max-w-full w-16 border border-gray-300 py-1.5 text-base leading-5 font-medium text-gray-500 text-center sm:text-sm"
-            />
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleQuantityChange(1);
-              }}
-              className="h-6 w-6 flex items-center justify-center cursor-pointer text-gray-500 hover:text-gray-700"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                className="h-6 w-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-            </button>
-          </div>
+              {productOptions.map((option) => {
+                const selectedValue = selectedVariant.selectedOptions?.find(
+                  (opt) => opt.name === option.name
+                )?.value || "";
+                
+                return (
+                  <div key={option.name} className="shrink-0">
+                    <label className="block text-xs font-medium mb-1" style={{ color: variantTextColor }}>
+                      {option.name}
+                    </label>
+                    <Select.Root
+                      value={selectedValue}
+                      onValueChange={(value) => {
+                        handleOptionChange(option.name, value);
+                      }}
+                    >
+                      <Select.Trigger
+                        className="inline-flex h-10 items-center justify-between gap-2 pl-3 pr-3 py-2 border-2 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 min-w-[120px]"
+                        style={{
+                          borderColor: borderColor,
+                        }}
+                      >
+                        <Select.Value placeholder="Select..." />
+                        <Select.Icon className="shrink-0">
+                          <CaretDownIcon size={16} />
+                        </Select.Icon>
+                      </Select.Trigger>
+                      <Select.Portal>
+                        <Select.Content
+                          className="overflow-hidden bg-white rounded-lg shadow-lg border-2 z-50"
+                          style={{
+                            borderColor: borderColor,
+                          }}
+                          position="popper"
+                          sideOffset={4}
+                        >
+                          <Select.Viewport className="p-1">
+                            {option.optionValues.map((value) => (
+                              <Select.Item
+                                key={value.name}
+                                value={value.name}
+                                disabled={!value.available}
+                                className="relative flex items-center justify-between px-3 py-2 pr-8 text-sm font-medium rounded-md outline-none cursor-pointer hover:bg-gray-100 focus:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed data-highlighted:bg-gray-100"
+                              >
+                                <Select.ItemText>
+                                  {value.name} {!value.available ? "(Unavailable)" : ""}
+                                </Select.ItemText>
+                                <Select.ItemIndicator className="inline-flex ml-2 items-center justify-center">
+                                  <CheckIcon size={16} />
+                                </Select.ItemIndicator>
+                              </Select.Item>
+                            ))}
+                          </Select.Viewport>
+                        </Select.Content>
+                      </Select.Portal>
+                    </Select.Root>
+                  </div>
+                );
+              })}
+            </div>
+          ) : displayVariant ? (
+            <div
+              className="mb-3 text-sm sm:text-base font-medium"
+              style={{ color: variantTextColor }}
+            >
+              {displayVariant}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      {/* Desktop Quantity Selector */}
-      <div className="input-num-none w-28 py-0 sm:py-2 border border-gray-200 rounded-md items-center justify-center hidden sm:flex">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleQuantityChange(-1);
-          }}
-          className="h-6 w-6 flex items-center justify-center cursor-pointer text-gray-200 hover:text-gray-700"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            className="h-6 w-6"
+      {/* Bottom Row: Quantity Selector */}
+      <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
+        <label className="text-sm font-medium text-gray-700">Quantity:</label>
+        <div className="flex items-center border-2 rounded-lg overflow-hidden bg-white shadow-sm w-auto">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleQuantityChange(-1);
+            }}
+            disabled={itemQuantity <= 1}
+            className="h-10 w-10 flex items-center justify-center cursor-pointer transition-colors duration-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 hover:text-gray-900"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M18 12H6"
-            />
-          </svg>
-        </button>
-        <input
-          type="number"
-          value={itemQuantity}
-          onChange={(e) => {
-            const val = parseInt(e.target.value) || 1;
-            setItemQuantity(Math.max(1, val));
-          }}
-          onClick={(e) => e.stopPropagation()}
-          className="max-w-full w-16 border border-gray-300 py-1.5 text-base leading-5 font-medium text-gray-500 text-center sm:text-sm"
-        />
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleQuantityChange(1);
-          }}
-          className="h-6 w-6 flex items-center justify-center cursor-pointer text-gray-500 hover:text-gray-700"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            className="h-6 w-6"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              className="w-5 h-5"
+              strokeWidth="2.5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M18 12H6"
+              />
+            </svg>
+          </button>
+          <input
+            type="number"
+            value={itemQuantity}
+            onChange={(e) => {
+              const val = parseInt(e.target.value) || 1;
+              setItemQuantity(Math.max(1, val));
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-14 h-10 text-center text-base font-semibold border-x-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:border-transparent"
+            min="1"
+          />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleQuantityChange(1);
+            }}
+            className="h-10 w-10 flex items-center justify-center cursor-pointer transition-colors duration-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              className="w-5 h-5"
+              strokeWidth="2.5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );

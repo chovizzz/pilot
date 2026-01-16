@@ -64,15 +64,21 @@ export function CustomAnalytics() {
           : "USD";
         
         // Always send view_item event with event_data, even if price is 0
+        // Use standard GTM/GA4 format with extended Shopify data
         trackAxonEvent("view_item", {
           currency: currency,
           value: price,
           items: [
             {
-              item_id: product.id || "",
+              item_id: product.variantId || product.id || "",
               item_name: product.title || "",
+              item_variant: product.variantTitle || "",
+              item_brand: product.vendor || "",
+              item_category: product.type || "",
               price: price,
               quantity: 1,
+              // Additional Shopify fields
+              ...(product.url && { item_url: product.url }),
             },
           ],
         });
@@ -113,15 +119,21 @@ export function CustomAnalytics() {
           : data.currency || "USD";
         
         // Always send add_to_cart event with event_data
+        // Use standard GTM/GA4 format with extended Shopify data
         trackAxonEvent("add_to_cart", {
           currency: currency,
           value: price * (product.quantity || 1),
           items: [
             {
-              item_id: product.id || "",
+              item_id: product.variantId || product.id || "",
               item_name: product.title || "",
+              item_variant: product.variantTitle || "",
+              item_brand: product.vendor || "",
+              item_category: product.type || "",
               price: price,
               quantity: product.quantity || 1,
+              // Additional Shopify fields
+              ...(product.url && { item_url: product.url }),
             },
           ],
         });

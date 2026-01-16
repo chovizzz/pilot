@@ -9,6 +9,14 @@ export interface SelectedProduct {
   price: { amount: string; currencyCode: string } | string;
   compareAtPrice?: { amount: string; currencyCode: string } | string;
   quantity: number;
+  // Additional Shopify product fields for analytics
+  vendor?: string;
+  productType?: string;
+  handle?: string;
+  productUrl?: string;
+  imageUrl?: string;
+  sku?: string;
+  tags?: string[];
 }
 
 interface CheckoutContextType {
