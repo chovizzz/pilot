@@ -302,7 +302,7 @@ function StickyNavigationDrawerContent(props: StickyNavigationDrawerProps) {
         }}
       >
         {/* Close Button */}
-        {closeIconData && (
+        {closeIconData && isOpen && (
           <div
             className="sticky-nav-close cursor-pointer mb-8 max-w-max mx-auto"
             onClick={onClose}
@@ -378,12 +378,10 @@ function StickyNavigationDrawerContent(props: StickyNavigationDrawerProps) {
           })}
         </div>
 
-        {/* Menu Images */}
-        {menuImage1Data && (
+        {/* Menu Images - Only render when drawer is open to avoid loading on first screen */}
+        {menuImage1Data && isOpen && (
           <div
-            className={`absolute right-0 bottom-0 w-full sticky-nav-menu-image1 ${
-              isOpen ? "open" : "closed"
-            }`}
+            className={`absolute right-0 bottom-0 w-full sticky-nav-menu-image1 open`}
           >
             <div
               className="imgage-section-container"
@@ -403,11 +401,9 @@ function StickyNavigationDrawerContent(props: StickyNavigationDrawerProps) {
           </div>
         )}
 
-        {menuImage2Data && (
+        {menuImage2Data && isOpen && (
           <div
-            className={`absolute bottom-0 w-full sticky-nav-menu-image2 max-w-[200px] ${
-              isOpen ? "open" : "closed"
-            }`}
+            className={`absolute bottom-0 w-full sticky-nav-menu-image2 max-w-[200px] open`}
           >
             <div
               className="imgage-section-container max-w-[200px]"
