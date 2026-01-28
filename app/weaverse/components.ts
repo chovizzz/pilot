@@ -93,6 +93,8 @@ import * as BackToTop from "~/sections/back-to-top";
 import * as Copyright from "~/sections/copyright";
 import * as Product360View from "~/sections/product-360-view";
 import * as Product360ViewItem from "~/sections/product-360-view/item";
+import * as InteractiveProduct360 from "~/sections/interactive-product-360";
+import * as InteractiveProduct360Item from "~/sections/interactive-product-360/item";
 import * as SatisfactionGuarantee from "~/sections/satisfaction-guarantee";
 import * as SatisfactionGuaranteeFeature from "~/sections/satisfaction-guarantee/feature";
 import * as SatisfactionGuaranteeReview from "~/sections/satisfaction-guarantee/review-item";
@@ -213,6 +215,8 @@ export const components: HydrogenComponent[] = [
   Copyright,
   Product360View,
   Product360ViewItem,
+  InteractiveProduct360,
+  InteractiveProduct360Item,
     SatisfactionGuarantee,
     SatisfactionGuaranteeFeature,
     SatisfactionGuaranteeReview,
