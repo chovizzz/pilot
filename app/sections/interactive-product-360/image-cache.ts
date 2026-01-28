@@ -172,6 +172,121 @@ class ImageCache {
 // 单例
 export const imageCache = new ImageCache();
 
+// 全局请求队列和并发控制
+const MAX_CONCURRENT_FETCHES = 4; // 降低并发数，避免 ERR_INSUFFICIENT_RESOURCES
+const fetchQueue: Array<{
+  url: string;
+  resolve: (response: Response) => void;
+  reject: (error: Error) => void;
+  retries: number;
+}> = [];
+let activeFetches = 0;
+
+/**
+ * 处理 fetch 队列
+ */
+function processFetchQueue() {
+  while (fetchQueue.length > 0 && activeFetches < MAX_CONCURRENT_FETCHES) {
+    const item = fetchQueue.shift();
+    if (!item) break;
+    
+    const attemptFetch = async (attempt: number) => {
+      try {
+        activeFetches++;
+        
+        // 创建 AbortController 用于超时控制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        const response = await fetch(item.url, {
+          cache: "no-cache",
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        activeFetches--;
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        item.resolve(response);
+        processFetchQueue();
+      } catch (error) {
+        activeFetches--;
+        
+        if (attempt < item.retries) {
+          // 指数退避重试
+          const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+          setTimeout(() => attemptFetch(attempt + 1), delay);
+        } else {
+          item.reject(error as Error);
+          processFetchQueue();
+        }
+      }
+    };
+    
+    attemptFetch(0);
+  }
+}
+
+/**
+ * 带队列和重试的 fetch 包装器
+ */
+async function fetchWithQueue(
+  url: string,
+  retries: number = 3
+): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    // 如果当前并发数未达上限，立即执行
+    if (activeFetches < MAX_CONCURRENT_FETCHES) {
+      const attemptFetch = async (attempt: number) => {
+        try {
+          activeFetches++;
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+          
+          const response = await fetch(url, {
+            cache: "no-cache",
+            signal: controller.signal,
+          });
+          
+          clearTimeout(timeoutId);
+          activeFetches--;
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          resolve(response);
+          processFetchQueue();
+        } catch (error) {
+          activeFetches--;
+          
+          if (attempt < retries) {
+            const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+            setTimeout(() => attemptFetch(attempt + 1), delay);
+          } else {
+            reject(error as Error);
+            processFetchQueue();
+          }
+        }
+      };
+      
+      attemptFetch(0);
+    } else {
+      // 否则加入队列
+      fetchQueue.push({
+        url,
+        resolve,
+        reject,
+        retries,
+      });
+    }
+  });
+}
+
 /**
  * 加载图片并转换为 blob URL
  * 优先使用缓存，如果没有则从网络加载并缓存
@@ -202,11 +317,9 @@ export async function loadImageAsBlobUrl(
     }
   }
 
-  // 从网络加载
+  // 从网络加载（使用队列和重试机制）
   try {
-    const response = await fetch(url, {
-      cache: "no-cache", // 确保获取最新图片
-    });
+    const response = await fetchWithQueue(url, 3);
     
     if (!response.ok) {
       throw new Error(`Failed to load image: ${response.statusText}`);

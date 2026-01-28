@@ -13,9 +13,10 @@ const TOTAL_IMAGES = 36; // 固定36张图片
 const ANGLE_STEP = 10; // 每张图片间隔10度
 
 const CACHE_WARMUP_BATCH_SIZE = 6;
-const CACHE_WARMUP_CONCURRENCY = 3;
-const CACHE_WARMUP_DELAY_MS = 40;
-const DECODE_CONCURRENCY = 3;
+// 降低并发数，避免 ERR_INSUFFICIENT_RESOURCES
+const CACHE_WARMUP_CONCURRENCY = 2; // 从 3 降到 2
+const CACHE_WARMUP_DELAY_MS = 60; // 增加延迟，从 40 到 60
+const DECODE_CONCURRENCY = 2; // 从 3 降到 2
 
 interface InteractiveProduct360Data {
   maxWidth?: number;
